@@ -1,0 +1,177 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 2em;
+    background: #f0f4f8;
+    line-height: 1.6; /* Melhora a legibilidade do texto */
+}
+h1 {
+    color: #25cc00;
+    text-align: center; /* Centraliza o título */
+    margin-bottom: 1.5em;
+}
+
+/* Novo estilo para o contêiner do formulário usando Flexbox */
+.form-container {
+    display: flex;
+    flex-wrap: wrap; /* Permite que os itens quebrem para a próxima linha em telas menores */
+    gap: 1em; /* Espaço entre os grupos de input */
+    max-width: 800px; /* Limita a largura máxima do formulário */
+    margin: 0 auto 2em auto; /* Centraliza o contêiner e adiciona margem inferior */
+    padding: 1.5em;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+.input-group {
+    flex: 1 1 200px; /* Flex-grow, flex-shrink, flex-basis - permite que os inputs cresçam e tenham uma base de 200px */
+    display: flex;
+    flex-direction: column; /* Empilha label e input */
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5em;
+    font-weight: bold;
+    color: #333;
+}
+
+input[type="text"],
+input[type="datetime-local"] {
+    padding: 0.8em; /* Aumenta o padding para melhor toque */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    width: 100%; /* Ocupa a largura total do input-group */
+    box-sizing: border-box; /* Inclui padding e border na largura */
+}
+
+.button-group {
+    flex-basis: 100%; /* Ocupa a largura total para os botões ficarem em sua própria linha */
+    display: flex;
+    gap: 1em; /* Espaço entre os botões */
+    justify-content: center; /* Centraliza os botões */
+    margin-top: 1em;
+}
+
+
+button {
+    padding: 0.8em 1.5em; /* Aumenta o padding dos botões */
+    font-size: 1em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.3s ease; /* Adiciona transição para opacidade */
+    flex-grow: 1; /* Botões crescem para preencher o button-group */
+    max-width: 150px; /* Limita a largura máxima de cada botão */
+}
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.6; /* Diminui a opacidade quando desabilitado */
+}
+
+#consultarBtn {
+    background-color: #25cc00;
+    color: white;
+}
+#consultarBtn:hover:not(:disabled) {
+    background-color: #25cc00;
+}
+
+/* Novo estilo para o botão Limpar */
+#limparBtn {
+    background-color: #6c757d; /* Cor cinza */
+    color: white;
+}
+#limparBtn:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+
+#resultado {
+    margin-top: 2em;
+}
+
+/* --- Estilos da Tabela (mantidos ou ligeiramente ajustados) --- */
+#chamadasTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background-color: #fff;
+}
+
+#chamadasTable th,
+#chamadasTable td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#chamadasTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #333;
+}
+
+#chamadasTable tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#chamadasTable tbody tr:hover {
+    background-color: #e9e9e9;
+}
+
+#chamadasTable td a {
+    color: #0066cc;
+    text-decoration: none;
+    font-weight: bold;
+}
+#chamadasTable td a:hover {
+    text-decoration: underline;
+}
+
+#chamadasTable td em {
+    color: #666;
+    font-style: normal;
+    font-size: 0.9em;
+}
+
+/* Estilo para as mensagens de erro ou resultado vazio */
+#resultado > p, #resultado > div {
+    margin-top: 1em;
+    padding: 0.8em;
+    border-radius: 4px;
+    text-align: center; /* Centraliza as mensagens */
+}
+#resultado > p {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+#resultado > div[id="resultado"] { /* Estilo específico para a div principal de resultado se usada para mensagens */
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+
+/* Estilo para o botão de baixar em lote */
+#baixarLoteBtn {
+    background-color: #facf0e; /* Cor verde */
+    color: white;
+    display: block; /* Ocupa a linha inteira */
+    margin: 20px auto; /* Centraliza e adiciona margem */
+    max-width: 300px; /* Largura máxima */
+}
+#baixarLoteBtn:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+
+a {
+    color: #0066cc;
+    text-decoration: none;
+}

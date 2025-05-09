@@ -1,10 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Consulta de Chamadas WideVoice</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
-$END$
+
+<h1>Consulta de Chamadas - Widevoice</h1>
+
+<div class="form-container">
+    <div class="input-group">
+        <label for="url_base">URL do servidor:</label>
+        <input type="text" id="url_base" placeholder="Ex: seudominio.intelbras.com.br" required/>
+    </div>
+
+    <div class="input-group">
+        <label for="login">Login:</label>
+        <input type="text" id="login" placeholder="login" required/>
+    </div>
+
+    <div class="input-group">
+        <label for="token">Token:</label>
+        <input type="text" id="token" placeholder="token" required/>
+    </div>
+
+    <div class="input-group">
+        <label for="datainicio">Data Início:</label>
+        <input type="datetime-local" id="datainicio" required/>
+    </div>
+
+    <div class="input-group">
+        <label for="datafim">Data Fim:</label>
+        <input type="datetime-local" id="datafim" required/>
+    </div>
+
+    <div class="button-group">
+        <button id="consultarBtn">Consultar</button>
+        <button id="limparCamposBtn">Limpar Campos</button>
+    </div>
+</div>
+
+<button id="baixarLoteBtn" style="display: none; margin-top: 10px;">Baixar Gravações em Lote</button>
+
+<div id="resultado">
+    <div id="statusMessageArea"></div>
+    <table id="chamadasTable">
+        <thead>
+        <tr>
+            <th>Número</th>
+            <th>Data/Hora</th>
+            <th>Duração (s)</th>
+            <th>Gravação</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<script type="module" src="js/app.js"></script>
+
 </body>
 </html>
