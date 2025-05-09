@@ -22,16 +22,21 @@ import {
 import { salvarConfiguracoes, carregarConfiguracoes } from './storageUtils.js';
 import { isValidDateTimeFormat, isValidUrlBase } from './validationUtils.js';
 
-import { fetchBackendZip } from './backendApi.js'; // Importa a função do Backend API
-import { saveBlobAsFile } from './fileUtils.js'; // Importa a função de salvar arquivo
+// Importa a função para download em lote do backend
+import { fetchBackendZip } from './backendApi.js';
+// Importa a função para salvar o arquivo (será usada tanto para lote quanto individual)
+import { saveBlobAsFile } from './fileUtils.js';
 
+
+// --- Constante para o novo endpoint de download individual no backend ---
+const BACKEND_DOWNLOAD_SINGLE_URL = 'http://localhost:3000/download-single'; // Ajuste a porta se necessário
 
 // --- Variáveis de Estado ---
 let allResults = []; // Armazena TODOS os resultados da consulta bruta da API
 // AGORA A PAGINAÇÃO VAI USAR urlsGravacoesEncontradas
-let urlsGravacoesEncontradas = []; // Armazena objetos { url: string, datahora: string, src: string, dst: string, duration: string } APENAS para itens COM gravação
+let urlsGravacoesEncontradas = []; // Armazena objetos { numero, datahora, src, dst, duration, url } APENAS para itens COM gravação
 let currentPage = 1;
-const resultsPerPage = 30; // Definido o número de resultados por página
+const resultsPerPage = 50;
 
 
 // --- Funções de Acesso a Elementos DOM para Paginação ---
@@ -132,12 +137,11 @@ function getAndValidateFormData() {
 
     const cleanUserUrl = user_url.replace(/^https?:\/\//, '');
 
-    // Retornando dateFimObj (nome correto)
     return { login, token, datainicioApi, datafimApi, cleanUserUrl, dateInicioObj, dateFimObj };
 }
 
 
-// --- Funções de Exibição de Resultados (Agora exibe apenas a página atual) ---
+// --- Funções de Exibição de Resultados (AGORA COM EVENT LISTENER PARA DOWNLOAD INDIVIDUAL) ---
 
 // Esta função AGORA recebe APENAS os dados da página que JÁ FORAM FILTRADOS para ter gravação
 export function displayResults(dadosPaginaFiltrada, userUrlBase) {
@@ -148,71 +152,32 @@ export function displayResults(dadosPaginaFiltrada, userUrlBase) {
         return;
     }
 
-    // Limpa o corpo da tabela antes de adicionar novos resultados
     chamadasTableBody.innerHTML = '';
 
-    // NÃO PRECISAMOS MAIS FILTRAR AQUI. dadosPaginaFiltrada JÁ CONTÉM APENAS OS ITENS COM GRAVAÇÃO.
-    // const chamadasComGravacaoPagina = Array.isArray(dadosPagina) ? dadosPagina.filter(chamada => chamada.gravacao && chamada.gravacao.trim() !== '') : [];
-
     if (!Array.isArray(dadosPaginaFiltrada) || dadosPaginaFiltrada.length === 0) {
-        // Se a página atual está vazia (o que pode acontecer se o total de gravações for < resultsPerPage na última página)
         console.log('A página atual não contém gravações para exibir.');
-        // A tabela já foi limpa. Nada a adicionar.
         return; // Sai da função se a página estiver vazia
     }
 
-
-    // Itera diretamente sobre os dados da página (que já são os itens com gravação)
     dadosPaginaFiltrada.forEach(chamada => {
         const row = document.createElement('tr');
 
-        // --- Determina Origem e Destino com base no tipo de chamada ('chamada' E ou S) ---
-        let origem = 'N/A';
-        let destino = 'N/A';
-        let numeroExibicao = chamada.numero || 'N/A'; // Usa o campo 'numero' como principal para a coluna 'Número'
+        // --- Determina Origem e Destino (já vêm no objeto da lista urlsGravacoesEncontradas) ---
+        // Os campos src, dst, duration e numero já vêm prontos no objeto 'chamada'
+        // pois foram adicionados ao mapear allResults para urlsGravacoesEncontradas
+        const origem = chamada.src || 'N/A';
+        const destino = chamada.dst || 'N/A';
+        const numeroExibicao = chamada.numero || 'N/A';
 
-        if (chamada.chamada === 'E') { // Chamada de Entrada
-            origem = chamada.call_entrada || 'N/A'; // Origem é o número externo
-            destino = chamada.numero || chamada.ramal || 'N/A'; // Destino é o número interno ou ramal
-        } else if (chamada.chamada === 'S') { // Chamada de Saída
-            origem = chamada.ramal || chamada.numero || 'N/A'; // Origem é o ramal ou número interno que ligou
-            destino = chamada.numero || chamada.call_entrada || 'N/A'; // Destino é o número externo discado
-        } else {
-            // Caso 'chamada' não seja 'E' nem 'S' (ou esteja faltando)
-            origem = chamada.ramal || chamada.numero || chamada.call_entrada || 'N/A';
-            destino = 'N/A'; // Ou outra lógica dependendo do tipo
-        }
-
-        // Formata Duração (verifica se é um número válido e adiciona 's')
-        const duracaoNumerica = parseInt(chamada.duracao, 10);
-        const duracaoFormatada = !isNaN(duracaoNumerica) && duracaoNumerica >= 0 ? `${duracaoNumerica}s` : 'N/A';
+        // Formata Duração (já vem bruta no objeto)
+        const duracaoNumericaDoItem = parseInt(chamada.duration, 10);
+        const duracaoFormatadaDoItem = !isNaN(duracaoNumericaDoItem) && duracaoNumericaDoItem >= 0 ? `${duracaoNumericaDoItem}s` : 'N/A';
 
 
-        // --- Criação e Adição das Células (<td>) na ORDEM CORRETA (Baseado no index.html) ---
-
+        // --- Criação e Adição das Células ---
         // Célula: Número (Primeira coluna)
         const numeroCell = document.createElement('td');
-        // A lista urlsGravacoesEncontradas armazena src, dst, duration, mas não numero
-        // Precisamos manter o objeto original da chamada para ter acesso ao numero
-        // ALTERNATIVA: Reestruturar urlsGravacoesEncontradas para incluir o numero
-        // Vamos assumir que o objeto 'chamada' aqui é o objeto original da API, o que faz sentido
-        // se o slice for feito DEPOIS de filtrar para urlsGravacoesEncontradas
-        // ou se urlsGravacoesEncontradas for uma lista de objetos MAIS COMPLETOS
-        // Pelo código atual, urlsGravacoesEncontradas É uma lista de objetos { url, datahora, src, dst, duration }
-        // Então precisamos ajustar como pegamos o 'numero' ou incluí-lo na lista urlsGravacoesEncontradas
-
-        // *** REVISÃO: urlsGravacoesEncontradas está sendo mapeada para { url, datahora, src, dst, duration } ***
-        // *** Precisamos que displayResults receba objetos com 'numero' também ***
-        // *** Vamos modificar o map ao criar urlsGravacoesEncontradas para incluir o 'numero' ***
-
-        // Célula: Número (Primeira coluna)
-        // Agora 'chamada' dentro do loop já tem 'numero'
-        numeroCell.textContent = chamada.numero || 'N/A';
-        numeroCell.setAttribute('data-label', 'Número');
-        row.appendChild(numeroCell);
-
-        // Célula: Data/Hora (Segunda coluna)
-        numeroCell.textContent = chamada.numero || 'N/A'; // CORRIGIDO: Usar 'numero'
+        numeroCell.textContent = numeroExibicao;
         numeroCell.setAttribute('data-label', 'Número');
         row.appendChild(numeroCell);
 
@@ -224,73 +189,74 @@ export function displayResults(dadosPaginaFiltrada, userUrlBase) {
 
         // Célula: Origem (Terceira coluna)
         const origemCell = document.createElement('td');
-        // Agora 'chamada' dentro do loop já tem 'src' calculado
-        origemCell.textContent = chamada.src || 'N/A'; // Usa a origem já calculada e armazenada
+        origemCell.textContent = origem; // Usa a origem já calculada e armazenada
         origemCell.setAttribute('data-label', 'Origem');
         row.appendChild(origemCell);
 
         // Célula: Destino (Quarta coluna)
         const destinoCell = document.createElement('td');
-        // Agora 'chamada' dentro do loop já tem 'dst' calculado
-        destinoCell.textContent = chamada.dst || 'N/A'; // Usa o destino já calculado e armazenado
+        destinoCell.textContent = destino; // Usa o destino já calculado e armazenado
         destinoCell.setAttribute('data-label', 'Destino');
         row.appendChild(destinoCell);
 
         // Célula: Duração (Quinta coluna)
         const duracaoCell = document.createElement('td');
-        // Agora 'chamada' dentro do loop já tem 'duration' bruto
-        // Precisamos formatar AQUI para exibição
-        const duracaoNumericaDoItem = parseInt(chamada.duration, 10); // Usa a duração bruta armazenada
-        const duracaoFormatadaDoItem = !isNaN(duracaoNumericaDoItem) && duracaoNumericaDoItem >= 0 ? `${duracaoNumericaDoItem}s` : 'N/A';
         duracaoCell.innerHTML = duracaoFormatadaDoItem; // Usa a duração formatada
         duracaoCell.setAttribute('data-label', 'Duração (s)');
         row.appendChild(duracaoCell);
 
 
-        // Célula: Gravação (Sexta coluna)
+        // Célula: Gravação (Sexta coluna) - COM NOVO COMPORTAMENTO DE DOWNLOAD INDIVIDUAL
         const gravacaoCell = document.createElement('td');
-        // A URL já está completa em chamada.url
-        const urlGravacao = chamada.url || '#';
+        const urlGravacao = chamada.url || '#'; // A URL já está completa e validada na lista
 
         const linkGravacao = document.createElement('a');
+        // O href ainda é a URL original, mas o clique será interceptado
         linkGravacao.href = urlGravacao;
-        linkGravacao.target = '_blank';
+        linkGravacao.textContent = MESSAGES.TEXT_BAIXAR_GRAVACAO; // Texto do link
+        linkGravacao.innerHTML = `<i class="fas fa-download"></i> ${MESSAGES.TEXT_BAIXAR_GRAVACAO}`; // Ícone e texto
+
+        // Adiciona um data attribute para identificar a URL da gravação
+        linkGravacao.dataset.recordingUrl = urlGravacao;
+
         // Desabilita o link se não houver URL válido
         if (urlGravacao === '#') {
-            linkGravacao.classList.add('disabled-link'); // Adiciona uma classe para estilizar
-            linkGravacao.style.pointerEvents = 'none'; // Desabilita cliques
-            linkGravacao.style.color = '#a0a0a0'; // Cor cinza para indicar desabilitado
+            linkGravacao.classList.add('disabled-link');
+            linkGravacao.style.pointerEvents = 'none';
+            linkGravacao.style.color = '#a0a0a0';
             linkGravacao.style.textDecoration = 'none';
             linkGravacao.title = "Gravação não disponível";
-            linkGravacao.innerHTML = `<i class="fas fa-times-circle"></i> Indisponível`; // Ícone e texto diferentes
+            linkGravacao.innerHTML = `<i class="fas fa-times-circle"></i> Indisponível`;
+            // Não adiciona event listener se estiver desabilitado
         } else {
-            linkGravacao.innerHTML = `<i class="fas fa-download"></i> ${MESSAGES.TEXT_BAIXAR_GRAVACAO}`;
+            // --- ADICIONA EVENT LISTENER PARA DOWNLOAD INDIVIDUAL ---
+            linkGravacao.addEventListener('click', (event) => {
+                event.preventDefault(); // IMPEDE O COMPORTAMENTO PADRÃO DO LINK
+                const urlToDownload = event.currentTarget.dataset.recordingUrl; // Pega a URL do data attribute
+                if (urlToDownload) {
+                    baixarGravacaoIndividual(urlToDownload); // Chama a nova função
+                }
+            });
         }
 
         gravacaoCell.appendChild(linkGravacao);
         gravacaoCell.setAttribute('data-label', 'Gravação');
 
-
         row.appendChild(gravacaoCell);
-
-        // Anexa a linha completa ao corpo da tabela
         chamadasTableBody.appendChild(row);
     });
-
-    // O gerenciamento do botão de baixar em lote e status final
-    // continua em consultarChamadas após a busca completa.
 
 }
 
 
-// --- Funções de Consulta API (COM PAGINAÇÃO POR FATIAMENTO TEMPORAL E PAGINAÇÃO NO FRONTEND) ---
+// --- Funções de Consulta API (fatiamento temporal) ---
 
 // Função auxiliar para buscar dados da API Widevoice usando intervalo de datas
 // Implementa a lógica de fatiamento temporal.
 // Esta função é uma helper INTERNA de consultarChamadas, NÃO PRECISA ser exportada.
 async function fetchWidevoiceDataByDateRange(urlBase, login, token, currentSearchStartApi, currentSearchEndApi, page) {
     const url = `https://${urlBase}/api.php?acao=statusreport&login=${login}&token=${token}`;
-    const payload = { datainicio: currentSearchStartApi, datafim: currentSearchEndApi };
+    const payload = { datainicio: currentSearchStartApi, datafim: currentSearchEndApi }; // Usa o parâmetro da função como o fim da faixa
 
     const response = await fetch(url, {
         method: 'POST',
@@ -369,11 +335,8 @@ export async function consultarChamadas() {
             // Verifica se o limite máximo de páginas foi atingido como salvaguarda
             if (page > MAX_PAGES_CONSULTATION) {
                 console.warn(`Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Interrompendo a busca.`);
-                // Exibe o aviso de limite máximo imediatamente
                 // A mensagem final será exibida no finally com base na quantidade de gravações encontradas
-                // showStatusWarning(MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length) + ` ⚠️ Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Resultados podem estar incompletos.`);
-                // Quebra o loop
-                break;
+                break; // Quebra o loop
             }
 
             // Converte o início da busca atual (Date object) para o formato da API (YYYY-MM-DD HH:mm:ss)
@@ -469,7 +432,7 @@ export async function consultarChamadas() {
         urlsGravacoesEncontradas = allResults
             .filter(chamada => chamada.gravacao && chamada.gravacao.trim() !== '') // Filtra APENAS quem tem gravação
             .map(chamada => {
-                // Constroi o objeto para exibição e download com todos os campos necessários
+                // Constroi o objeto para exibição E download com todos os campos necessários
                 const caminho = chamada.gravacao.replaceAll("\\/", "/");
                 const urlGravacao = chamada.recording_url || (caminho ? `https://${formData.cleanUserUrl}/gravador28/${caminho}.gsm` : '#');
 
@@ -517,7 +480,10 @@ export async function consultarChamadas() {
             } else {
                 // Se o limite máximo foi atingido, mantém a mensagem de aviso e adiciona a contagem de gravações
                 const currentStatusText = getStatusMessageArea()?.textContent || '';
-                getStatusMessageArea().textContent = `${currentStatusText} ${numGravacoesEncontradas} gravações encontradas.`;
+                // Garante que a mensagem não seja duplicada se já foi atualizada antes
+                if (!currentStatusText.includes(`${numGravacoesEncontradas} gravações encontradas`)) {
+                    getStatusMessageArea().textContent = `${currentStatusText.trim()} ${numGravacoesEncontradas} gravações encontradas.`;
+                }
             }
 
         } else if (allResults.length > 0 && numGravacoesEncontradas === 0) {
@@ -623,7 +589,7 @@ function goToNextPage() {
 }
 
 
-// --- Funções de Exibir Erros da API de Consulta (Widevoice API) ---
+// --- Funções de Exibir Erros ---
 function handleApiError(erro) {
     const consultarBtn = getConsultarBtn();
     const baixarLoteBtn = getBaixarLoteBtn();
@@ -648,9 +614,81 @@ function handleApiError(erro) {
 }
 
 
-// --- Funções de Download em Lote ---
+// --- Funções de Download ---
 
-// Função principal do botão de download em lote (apenas confirmação e chamada)
+// --- Função para Download INDIVIDUAL com Conversão (NOVA FUNÇÃO) ---
+async function baixarGravacaoIndividual(recordingUrl) {
+    const consultarBtn = getConsultarBtn();
+    const baixarLoteBtn = getBaixarLoteBtn(); // Adicionado para desabilitar o botão de lote também
+
+    showStatusLoading(MESSAGES.DOWNLOAD_PROCESSING + ' (Individual)...');
+    if (consultarBtn) disableConsultarBtn();
+    if (baixarLoteBtn) disableBaixarLoteBtn(); // Desabilita o botão de lote
+    hidePaginationControls(); // Oculta paginação durante o download
+
+    try {
+        console.log(`Solicitando download individual convertido para o backend para URL: ${recordingUrl}`);
+        const response = await fetch(BACKEND_DOWNLOAD_SINGLE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ recordingUrl: recordingUrl }), // Envia a URL para o backend
+        });
+
+        // --- TRATAMENTO DA RESPOSTA DO BACKEND (DOWNLOAD INDIVIDUAL) ---
+        if (!response.ok) {
+            console.error(`Resposta de erro do backend (individual): Status ${response.status}`);
+
+            try {
+                const errorData = await response.json();
+                console.error('Dados de erro do backend (individual):', errorData);
+
+                const errorMsg = errorData.error || errorData.details || `Status: ${response.status}`;
+                showStatusError(`❌ Falha no download individual: ${errorMsg}`);
+
+            } catch (jsonError) {
+                console.error('Erro ao ler resposta de erro do backend (individual) como JSON, tentando como texto:', jsonError);
+                try {
+                    const errorText = await response.text();
+                    console.error('Corpo da resposta de error como texto (individual):', errorText);
+                    showStatusError(`❌ Falha no download individual: Status ${response.status}. Resposta: ${errorText}`);
+                } catch (textError) {
+                    showStatusError(`❌ Falha no download individual: Status ${response.status}. Não foi possível ler a resposta.`);
+                }
+            }
+            return; // Sai da função após tratar o erro
+        }
+
+        // ** SE response.ok FOR TRUE (Status 200 OK) **
+        // LER O CORPO DA RESPOSTA COMO BLOB (É O ARQUIVO MP3)
+        console.log('Resposta do backend recebida (Status 200 OK - individual). Lendo corpo como Blob...');
+        const mp3Blob = await response.blob();
+
+        // Utiliza a função de salvar arquivo importada (que lida com FileSaver.js ou fallback)
+        // Passa o blob do MP3 e os cabeçalhos da resposta do backend (para o nome do arquivo)
+        saveBlobAsFile(mp3Blob, response.headers);
+
+        // Feedback de sucesso é dado DENTRO de saveBlobAsFile (agora com nome de arquivo mais específico)
+
+    } catch (error) {
+        console.error('Erro na comunicação com o backend ou processamento/exibição do erro no frontend (individual):', error);
+        showStatusError(`❌ Erro no download individual: ${error.message}`);
+
+    } finally {
+        // Reabilita os botões ao final
+        if (consultarBtn) enableConsultarBtn();
+        if (baixarLoteBtn) enableBaixarLoteBtn();
+        // Reexibe os controles de paginação se houver GRAVAÇÕES para exibir
+        if (urlsGravacoesEncontradas.length > 0) {
+            showPaginationControls();
+            updatePaginationButtons();
+        }
+    }
+}
+
+
+// --- Função principal do botão de download em lote ---
 export async function baixarGravacoesEmLote() {
     // Esta função já usa urlsGravacoesEncontradas, então não precisa mudar
     const numGravacoes = urlsGravacoesEncontradas.length;
@@ -673,7 +711,7 @@ export async function baixarGravacoesEmLote() {
     fetchAndSaveZipFromBackend(urlsGravacoesEncontradas, convertToMp3);
 }
 
-// Função auxiliar para baixar o arquivo ZIP do backend e salvar (agora separada)
+// --- Função auxiliar para baixar o arquivo ZIP do backend e salvar ---
 async function fetchAndSaveZipFromBackend(recordingsList, convertToMp3) {
     const baixarLoteBtn = getBaixarLoteBtn();
     const consultarBtn = getConsultarBtn(); // Adicionado para desabilitar durante o download
@@ -732,7 +770,7 @@ async function fetchAndSaveZipFromBackend(recordingsList, convertToMp3) {
         if (baixarLoteBtn) enableBaixarLoteBtn();
         if (consultarBtn) enableConsultarBtn();
         // Reexibe os controles de paginação se houver GRAVAÇÕES para exibir
-        if (urlsGravacoesEncontradas.length > 0) { // AGORA VERIFICA urlsGravacoesEncontradas
+        if (urlsGravacoesEncontradas.length > 0) {
             showPaginationControls();
             updatePaginationButtons();
         }
@@ -742,8 +780,10 @@ async function fetchAndSaveZipFromBackend(recordingsList, convertToMp3) {
 
 // --- Event Listeners ---
 
+// Carrega configurações ao carregar a janela
 window.addEventListener('load', carregarConfiguracoes);
 
+// Adiciona os event listeners aos botões e AGORA aos links de gravação (delegado)
 document.addEventListener('DOMContentLoaded', () => {
     const consultarBtn = getConsultarBtn();
     if(consultarBtn) {
@@ -760,6 +800,7 @@ document.addEventListener('DOMContentLoaded', () => {
         baixarLoteBtn.addEventListener('click', baixarGravacoesEmLote);
     }
 
+    // Event listeners para paginação
     const prevPageBtn = getPrevPageBtn();
     if(prevPageBtn) {
         prevPageBtn.addEventListener('click', goToPreviousPage);
@@ -770,7 +811,10 @@ document.addEventListener('DOMContentLoaded', () => {
         nextPageBtn.addEventListener('click', goToNextPage);
     }
 
-    // Inicializa o estado dos botões de paginação ao carregar a página
+    // Inicializa o estado dos botões de paginação
     // (eles estarão desabilitados e ocultos se urlsGravacoesEncontradas estiver vazio)
     updatePaginationButtons();
+
+    // O listener para download individual agora é adicionado DIRETAMENTE em cada link
+    // quando eles são criados na função displayResults.
 });
