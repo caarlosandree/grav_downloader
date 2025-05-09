@@ -272,7 +272,7 @@ button:disabled {
 #resultado {
     margin-top: 30px;
     width: 100%; /* Garante que a área de resultado ocupe a largura total */
-    max-width: 800px; /* Limita a largura máxima */
+    max-width: 900px; /* Limita a largura máxima */
     margin-left: auto; /* Centraliza o bloco de resultado */
     margin-right: auto; /* Centraliza o bloco de resultado */
 }

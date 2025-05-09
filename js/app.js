@@ -95,23 +95,30 @@ function getAndValidateFormData() {
 
 // --- Funções de Exibição de Resultados ---
 // Esta função agora não limpa o status, pois o status final é definido na função consultarChamadas
+
 export function displayResults(dados, userUrlBase) {
     const chamadasTableBody = getChamadasTableBody();
     const baixarLoteBtn = getBaixarLoteBtn();
 
-    if (!chamadasTableBody) return;
+    if (!chamadasTableBody) {
+        console.error("Elemento #chamadasTable tbody não encontrado!");
+        return;
+    }
 
+    // Limpa o corpo da tabela antes de adicionar novos resultados
     chamadasTableBody.innerHTML = '';
+    // Limpa o array de gravações encontradas para o novo conjunto de resultados
+    // IMPORTANTE: urlsGravacoesEncontradas é usado para o PAYLOAD enviado ao backend.
+    // Podemos incluir mais dados aqui para futuras melhorias (download individual com nome formatado).
     urlsGravacoesEncontradas = [];
 
-    // Removido clearStatus(); daqui
-
-    const chamadasComGravacao = Array.isArray(dados) ? dados.filter(chamada => chamada.gravacao) : [];
+    // Filtra os dados que possuem o campo 'gravacao' preenchido (não vazio)
+    const chamadasComGravacao = Array.isArray(dados) ? dados.filter(chamada => chamada.gravacao && chamada.gravacao.trim() !== '') : [];
 
 
     if (chamadasComGravacao.length === 0) {
-        // Se displayResults for chamada com 0 resultados (ex: consulta vazia ou sem gravações),
-        // o status já foi definido em consultarChamadas.
+        // Se não houver chamadas com gravação, esconde o botão de download.
+        // O status já foi definido em consultarChamadas.
         hideBaixarLoteBtn();
         return;
     }
@@ -119,46 +126,116 @@ export function displayResults(dados, userUrlBase) {
     chamadasComGravacao.forEach(chamada => {
         const row = document.createElement('tr');
 
+        // --- Determina Origem e Destino com base no tipo de chamada ('chamada' E ou S) ---
+        let origem = 'N/A';
+        let destino = 'N/A';
+        let numeroExibicao = chamada.numero || 'N/A'; // Usa o campo 'numero' como principal para a coluna 'Número'
+
+        if (chamada.chamada === 'E') { // Chamada de Entrada
+            origem = chamada.call_entrada || 'N/A'; // Origem é o número externo
+            destino = chamada.numero || chamada.ramal || 'N/A'; // Destino é o número interno ou ramal
+        } else if (chamada.chamada === 'S') { // Chamada de Saída
+            origem = chamada.ramal || chamada.numero || 'N/A'; // Origem é o ramal ou número interno que ligou
+            destino = chamada.numero || chamada.call_entrada || 'N/A'; // Destino é o número externo discado
+        } else {
+            // Caso 'chamada' não seja 'E' nem 'S' (ou esteja faltando)
+            origem = chamada.ramal || chamada.numero || chamada.call_entrada || 'N/A';
+            destino = 'N/A'; // Ou outra lógica dependendo do tipo
+        }
+
+        // Formata Duração (verifica se é um número válido e adiciona 's')
+        const duracaoNumerica = parseInt(chamada.duracao, 10);
+        const duracaoFormatada = !isNaN(duracaoNumerica) && duracaoNumerica >= 0 ? `${duracaoNumerica}s` : 'N/A';
+
+
+        // --- Criação e Adição das Células (<td>) na ORDEM CORRETA (Baseado no index.html) ---
+
+        // Célula: Número (Primeira coluna)
         const numeroCell = document.createElement('td');
-        numeroCell.textContent = chamada.numero;
-        numeroCell.setAttribute('data-label', 'Número'); // Adiciona data-label
+        // Decide qual número exibir na coluna 'Número' - pode ser 'numero', 'ramal' ou 'call_entrada' dependendo do contexto
+        // Vamos manter como 'numero' por enquanto, mas pode ajustar se necessário
+        numeroCell.textContent = numeroExibicao;
+        numeroCell.setAttribute('data-label', 'Número');
         row.appendChild(numeroCell);
 
+        // Célula: Data/Hora (Segunda coluna)
         const datahoraCell = document.createElement('td');
-        datahoraCell.textContent = chamada.datahora; // Usa a datahora original da API
-        datahoraCell.setAttribute('data-label', 'Data/Hora'); // Adiciona data-label
+        datahoraCell.textContent = chamada.datahora || 'N/A';
+        datahoraCell.setAttribute('data-label', 'Data/Hora');
         row.appendChild(datahoraCell);
 
+        // Célula: Origem (Terceira coluna)
+        const origemCell = document.createElement('td');
+        origemCell.textContent = origem; // Usa a origem calculada
+        origemCell.setAttribute('data-label', 'Origem');
+        row.appendChild(origemCell);
+
+        // Célula: Destino (Quarta coluna)
+        const destinoCell = document.createElement('td');
+        destinoCell.textContent = destino; // Usa o destino calculado
+        destinoCell.setAttribute('data-label', 'Destino');
+        row.appendChild(destinoCell);
+
+        // Célula: Duração (Quinta coluna)
         const duracaoCell = document.createElement('td');
-        duracaoCell.innerHTML = `${chamada.duracao} <em>segundos</em>`; // Mantido <em> para segundos
-        duracaoCell.setAttribute('data-label', 'Duração (s)'); // Adiciona data-label
+        duracaoCell.innerHTML = duracaoFormatada; // Usa a duração formatada
+        duracaoCell.setAttribute('data-label', 'Duração (s)');
         row.appendChild(duracaoCell);
 
+        // Célula: Gravação (Sexta coluna)
         const gravacaoCell = document.createElement('td');
-        const caminho = chamada.gravacao.replaceAll("\\/", "/");
-        const urlGravacao = `https://${userUrlBase}/gravador28/${caminho}.gsm`;
+        // Prioriza 'recording_url' se existir, senão constrói com 'gravacao'
+        const caminho = chamada.gravacao ? chamada.gravacao.replaceAll("\\/", "/") : '';
+        const urlGravacao = chamada.recording_url || (caminho ? `https://${userUrlBase}/gravador28/${caminho}.gsm` : '#'); // Usa '#' se não tiver URL
 
-        // Armazena o URL e a datahora original para o download em lote
-        urlsGravacoesEncontradas.push({ url: urlGravacao, datahora: chamada.datahora });
+        // Armazena os dados relevantes para o download em lote
+        // Inclui mais dados aqui para ter acesso fácil no futuro, se necessário
+        if (urlGravacao && urlGravacao !== '#') { // Só adiciona se tiver um URL de gravação válido
+            urlsGravacoesEncontradas.push({
+                url: urlGravacao,
+                datahora: chamada.datahora,
+                src: origem, // Armazena origem calculada
+                dst: destino, // Armazena destino calculado
+                duration: chamada.duracao // Armazena duração bruta
+                // Pode adicionar mais campos aqui se o backend precisar ou para download individual
+            });
+        }
+
 
         const linkGravacao = document.createElement('a');
         linkGravacao.href = urlGravacao;
         linkGravacao.target = '_blank';
-        // Usa ícone no link de download
-        linkGravacao.innerHTML = `<i class="fas fa-download"></i> ${MESSAGES.TEXT_BAIXAR_GRAVACAO}`; // Adiciona ícone
+        // Desabilita o link se não houver URL válido
+        if (urlGravacao === '#') {
+            linkGravacao.classList.add('disabled-link'); // Adiciona uma classe para estilizar
+            linkGravacao.style.pointerEvents = 'none'; // Desabilita cliques
+            linkGravacao.style.color = '#a0a0a0'; // Cor cinza para indicar desabilitado
+            linkGravacao.style.textDecoration = 'none';
+            linkGravacao.title = "Gravação não disponível";
+            linkGravacao.innerHTML = `<i class="fas fa-times-circle"></i> Indisponível`; // Ícone e texto diferentes
+        } else {
+            linkGravacao.innerHTML = `<i class="fas fa-download"></i> ${MESSAGES.TEXT_BAIXAR_GRAVACAO}`;
+        }
+
         gravacaoCell.appendChild(linkGravacao);
-        gravacaoCell.setAttribute('data-label', 'Gravação'); // Adiciona data-label
+        gravacaoCell.setAttribute('data-label', 'Gravação');
 
 
         row.appendChild(gravacaoCell);
 
+        // Anexa a linha completa ao corpo da tabela
         chamadasTableBody.appendChild(row);
     });
 
-
-    if (baixarLoteBtn && urlsGravacoesEncontradas.length > 0) {
-        showBaixarLoteBtn();
+    // Lógica para mostrar/esconder o botão de baixar em lote (mantida)
+    if (baixarLoteBtn) { // Verifica se o botão existe
+        if (urlsGravacoesEncontradas.length > 0) {
+            showBaixarLoteBtn();
+        } else {
+            hideBaixarLoteBtn();
+        }
     }
+    // clearStatus() foi removido no seu código, mantido assim.
 }
 
 
