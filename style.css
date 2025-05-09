@@ -539,3 +539,60 @@ button:disabled {
 #baixarLoteBtn:active:not(:disabled) {
     transform: scale(0.98);
 }
+
+/* --- Estilos para os Controles de Paginação --- */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    gap: 15px; /* Espaço entre os elementos de paginação */
+    flex-wrap: wrap; /* Permite quebrar linha em telas menores */
+}
+
+.pagination-controls button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    background-color: #28A745FF; /* Cor azul Bootstrap como exemplo */
+    color: white;
+    border: 1px solid #28A745FF;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.3s ease;
+    display: inline-flex; /* Alinha ícone e texto */
+    align-items: center;
+    gap: 5px; /* Espaço entre ícone e texto */
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #28A745FF;
+    border-color: #28A745FF;
+}
+
+.pagination-controls button:disabled {
+    background-color: #cccccc;
+    border-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#pageInfo {
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--text-color);
+    min-width: 100px; /* Garante largura mínima para evitar layout shift */
+    text-align: center;
+}
+
+/* Ajustes responsivos para paginação */
+@media (max-width: 480px) {
+    .pagination-controls {
+        flex-direction: column; /* Empilha os botões e info em telas muito pequenas */
+        gap: 10px;
+    }
+
+    .pagination-controls button {
+        width: 100%; /* Botões de largura total em telas muito pequenas */
+        justify-content: center;
+    }
+}

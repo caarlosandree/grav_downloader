@@ -1,20 +1,61 @@
 // Importa tudo que é necessário de outros módulos
-// Importa a constante para o ID do checkbox
 import { MESSAGES, API_LIMIT_PER_PAGE, MAX_PAGES_CONSULTATION, CHECKBOX_CONVERT_TO_MP3_ID } from './constants.js';
 // Importa funções de domUtils
-import { getElement, getChamadasTableBody, getBaixarLoteBtn, getConsultarBtn, showStatusLoading, showStatusSuccess, showStatusError, showStatusWarning, clearStatus, disableConsultarBtn, enableConsultarBtn, disableBaixarLoteBtn, enableBaixarLoteBtn, showBaixarLoteBtn, hideBaixarLoteBtn, getStatusMessageArea } from './domUtils.js';
+import {
+    getElement,
+    getChamadasTableBody,
+    getBaixarLoteBtn,
+    getConsultarBtn,
+    showStatusLoading,
+    showStatusSuccess,
+    showStatusError,
+    showStatusWarning,
+    clearStatus,
+    disableConsultarBtn,
+    enableConsultarBtn,
+    disableBaixarLoteBtn,
+    enableBaixarLoteBtn,
+    showBaixarLoteBtn,
+    hideBaixarLoteBtn,
+    getStatusMessageArea
+} from './domUtils.js';
 import { salvarConfiguracoes, carregarConfiguracoes } from './storageUtils.js';
 import { isValidDateTimeFormat, isValidUrlBase } from './validationUtils.js';
-// Importa a função da API Widevoice (vamos manter a função de fatiamento temporal aqui, como estava)
-// Não precisamos importar fetchWidevoiceDataByDateRange aqui se ela for definida no mesmo arquivo
-// import { fetchWidevoiceDataByDateRange } from './widevoiceApi.js'; // Removida a importação se definida localmente
 
 import { fetchBackendZip } from './backendApi.js'; // Importa a função do Backend API
 import { saveBlobAsFile } from './fileUtils.js'; // Importa a função de salvar arquivo
 
 
 // --- Variáveis de Estado ---
-let urlsGravacoesEncontradas = []; // Armazena objetos { url: string, datahora: string }
+let allResults = []; // Armazena TODOS os resultados da consulta bruta da API
+// AGORA A PAGINAÇÃO VAI USAR urlsGravacoesEncontradas
+let urlsGravacoesEncontradas = []; // Armazena objetos { url: string, datahora: string, src: string, dst: string, duration: string } APENAS para itens COM gravação
+let currentPage = 1;
+const resultsPerPage = 30; // Definido o número de resultados por página
+
+
+// --- Funções de Acesso a Elementos DOM para Paginação ---
+const getPaginationControls = () => getElement('paginationControls');
+const getPrevPageBtn = () => getElement('prevPageBtn');
+const getNextPageBtn = () => getElement('nextPageBtn');
+const getPageInfoSpan = () => getElement('pageInfo');
+
+const showPaginationControls = () => {
+    const controls = getPaginationControls();
+    if (controls) controls.style.display = 'flex'; // Usa flex para centralizar
+};
+const hidePaginationControls = () => {
+    const controls = getPaginationControls();
+    if (controls) controls.style.display = 'none';
+};
+const updatePageInfo = (current, total) => {
+    const pageInfoSpan = getPageInfoSpan();
+    if (pageInfoSpan) pageInfoSpan.textContent = `Página ${current} de ${total}`;
+};
+const enablePrevPageBtn = () => { const btn = getPrevPageBtn(); if(btn) btn.disabled = false; };
+const disablePrevPageBtn = () => { const btn = getPrevPageBtn(); if(btn) btn.disabled = true; };
+const enableNextPageBtn = () => { const btn = getNextPageBtn(); if(btn) btn.disabled = false; };
+const disableNextPageBtn = () => { const btn = getNextPageBtn(); if(btn) btn.disabled = true; };
 
 
 // --- Funções de Manipulação do Formulário e Botões ---
@@ -37,11 +78,14 @@ export function limparCampos() {
 
     if (chamadasTableBody) chamadasTableBody.innerHTML = '';
     clearStatus();
-    urlsGravacoesEncontradas = [];
+    allResults = []; // Limpa todos os resultados brutos
+    urlsGravacoesEncontradas = []; // Limpa a lista para download (e AGORA para exibição)
 
     hideBaixarLoteBtn();
     enableBaixarLoteBtn();
     enableConsultarBtn();
+    hidePaginationControls(); // Esconde controles de paginação
+    currentPage = 1; // Reseta a página atual
 
     console.log('Campos e resultados limpos.');
 }
@@ -93,12 +137,11 @@ function getAndValidateFormData() {
 }
 
 
-// --- Funções de Exibição de Resultados ---
-// Esta função agora não limpa o status, pois o status final é definido na função consultarChamadas
+// --- Funções de Exibição de Resultados (Agora exibe apenas a página atual) ---
 
-export function displayResults(dados, userUrlBase) {
+// Esta função AGORA recebe APENAS os dados da página que JÁ FORAM FILTRADOS para ter gravação
+export function displayResults(dadosPaginaFiltrada, userUrlBase) {
     const chamadasTableBody = getChamadasTableBody();
-    const baixarLoteBtn = getBaixarLoteBtn();
 
     if (!chamadasTableBody) {
         console.error("Elemento #chamadasTable tbody não encontrado!");
@@ -107,23 +150,20 @@ export function displayResults(dados, userUrlBase) {
 
     // Limpa o corpo da tabela antes de adicionar novos resultados
     chamadasTableBody.innerHTML = '';
-    // Limpa o array de gravações encontradas para o novo conjunto de resultados
-    // IMPORTANTE: urlsGravacoesEncontradas é usado para o PAYLOAD enviado ao backend.
-    // Podemos incluir mais dados aqui para futuras melhorias (download individual com nome formatado).
-    urlsGravacoesEncontradas = [];
 
-    // Filtra os dados que possuem o campo 'gravacao' preenchido (não vazio)
-    const chamadasComGravacao = Array.isArray(dados) ? dados.filter(chamada => chamada.gravacao && chamada.gravacao.trim() !== '') : [];
+    // NÃO PRECISAMOS MAIS FILTRAR AQUI. dadosPaginaFiltrada JÁ CONTÉM APENAS OS ITENS COM GRAVAÇÃO.
+    // const chamadasComGravacaoPagina = Array.isArray(dadosPagina) ? dadosPagina.filter(chamada => chamada.gravacao && chamada.gravacao.trim() !== '') : [];
 
-
-    if (chamadasComGravacao.length === 0) {
-        // Se não houver chamadas com gravação, esconde o botão de download.
-        // O status já foi definido em consultarChamadas.
-        hideBaixarLoteBtn();
-        return;
+    if (!Array.isArray(dadosPaginaFiltrada) || dadosPaginaFiltrada.length === 0) {
+        // Se a página atual está vazia (o que pode acontecer se o total de gravações for < resultsPerPage na última página)
+        console.log('A página atual não contém gravações para exibir.');
+        // A tabela já foi limpa. Nada a adicionar.
+        return; // Sai da função se a página estiver vazia
     }
 
-    chamadasComGravacao.forEach(chamada => {
+
+    // Itera diretamente sobre os dados da página (que já são os itens com gravação)
+    dadosPaginaFiltrada.forEach(chamada => {
         const row = document.createElement('tr');
 
         // --- Determina Origem e Destino com base no tipo de chamada ('chamada' E ou S) ---
@@ -152,9 +192,27 @@ export function displayResults(dados, userUrlBase) {
 
         // Célula: Número (Primeira coluna)
         const numeroCell = document.createElement('td');
-        // Decide qual número exibir na coluna 'Número' - pode ser 'numero', 'ramal' ou 'call_entrada' dependendo do contexto
-        // Vamos manter como 'numero' por enquanto, mas pode ajustar se necessário
-        numeroCell.textContent = numeroExibicao;
+        // A lista urlsGravacoesEncontradas armazena src, dst, duration, mas não numero
+        // Precisamos manter o objeto original da chamada para ter acesso ao numero
+        // ALTERNATIVA: Reestruturar urlsGravacoesEncontradas para incluir o numero
+        // Vamos assumir que o objeto 'chamada' aqui é o objeto original da API, o que faz sentido
+        // se o slice for feito DEPOIS de filtrar para urlsGravacoesEncontradas
+        // ou se urlsGravacoesEncontradas for uma lista de objetos MAIS COMPLETOS
+        // Pelo código atual, urlsGravacoesEncontradas É uma lista de objetos { url, datahora, src, dst, duration }
+        // Então precisamos ajustar como pegamos o 'numero' ou incluí-lo na lista urlsGravacoesEncontradas
+
+        // *** REVISÃO: urlsGravacoesEncontradas está sendo mapeada para { url, datahora, src, dst, duration } ***
+        // *** Precisamos que displayResults receba objetos com 'numero' também ***
+        // *** Vamos modificar o map ao criar urlsGravacoesEncontradas para incluir o 'numero' ***
+
+        // Célula: Número (Primeira coluna)
+        // Agora 'chamada' dentro do loop já tem 'numero'
+        numeroCell.textContent = chamada.numero || 'N/A';
+        numeroCell.setAttribute('data-label', 'Número');
+        row.appendChild(numeroCell);
+
+        // Célula: Data/Hora (Segunda coluna)
+        numeroCell.textContent = chamada.numero || 'N/A'; // CORRIGIDO: Usar 'numero'
         numeroCell.setAttribute('data-label', 'Número');
         row.appendChild(numeroCell);
 
@@ -166,41 +224,33 @@ export function displayResults(dados, userUrlBase) {
 
         // Célula: Origem (Terceira coluna)
         const origemCell = document.createElement('td');
-        origemCell.textContent = origem; // Usa a origem calculada
+        // Agora 'chamada' dentro do loop já tem 'src' calculado
+        origemCell.textContent = chamada.src || 'N/A'; // Usa a origem já calculada e armazenada
         origemCell.setAttribute('data-label', 'Origem');
         row.appendChild(origemCell);
 
         // Célula: Destino (Quarta coluna)
         const destinoCell = document.createElement('td');
-        destinoCell.textContent = destino; // Usa o destino calculado
+        // Agora 'chamada' dentro do loop já tem 'dst' calculado
+        destinoCell.textContent = chamada.dst || 'N/A'; // Usa o destino já calculado e armazenado
         destinoCell.setAttribute('data-label', 'Destino');
         row.appendChild(destinoCell);
 
         // Célula: Duração (Quinta coluna)
         const duracaoCell = document.createElement('td');
-        duracaoCell.innerHTML = duracaoFormatada; // Usa a duração formatada
+        // Agora 'chamada' dentro do loop já tem 'duration' bruto
+        // Precisamos formatar AQUI para exibição
+        const duracaoNumericaDoItem = parseInt(chamada.duration, 10); // Usa a duração bruta armazenada
+        const duracaoFormatadaDoItem = !isNaN(duracaoNumericaDoItem) && duracaoNumericaDoItem >= 0 ? `${duracaoNumericaDoItem}s` : 'N/A';
+        duracaoCell.innerHTML = duracaoFormatadaDoItem; // Usa a duração formatada
         duracaoCell.setAttribute('data-label', 'Duração (s)');
         row.appendChild(duracaoCell);
 
+
         // Célula: Gravação (Sexta coluna)
         const gravacaoCell = document.createElement('td');
-        // Prioriza 'recording_url' se existir, senão constrói com 'gravacao'
-        const caminho = chamada.gravacao ? chamada.gravacao.replaceAll("\\/", "/") : '';
-        const urlGravacao = chamada.recording_url || (caminho ? `https://${userUrlBase}/gravador28/${caminho}.gsm` : '#'); // Usa '#' se não tiver URL
-
-        // Armazena os dados relevantes para o download em lote
-        // Inclui mais dados aqui para ter acesso fácil no futuro, se necessário
-        if (urlGravacao && urlGravacao !== '#') { // Só adiciona se tiver um URL de gravação válido
-            urlsGravacoesEncontradas.push({
-                url: urlGravacao,
-                datahora: chamada.datahora,
-                src: origem, // Armazena origem calculada
-                dst: destino, // Armazena destino calculado
-                duration: chamada.duracao // Armazena duração bruta
-                // Pode adicionar mais campos aqui se o backend precisar ou para download individual
-            });
-        }
-
+        // A URL já está completa em chamada.url
+        const urlGravacao = chamada.url || '#';
 
         const linkGravacao = document.createElement('a');
         linkGravacao.href = urlGravacao;
@@ -227,47 +277,20 @@ export function displayResults(dados, userUrlBase) {
         chamadasTableBody.appendChild(row);
     });
 
-    // Lógica para mostrar/esconder o botão de baixar em lote (mantida)
-    if (baixarLoteBtn) { // Verifica se o botão existe
-        if (urlsGravacoesEncontradas.length > 0) {
-            showBaixarLoteBtn();
-        } else {
-            hideBaixarLoteBtn();
-        }
-    }
-    // clearStatus() foi removido no seu código, mantido assim.
+    // O gerenciamento do botão de baixar em lote e status final
+    // continua em consultarChamadas após a busca completa.
+
 }
 
 
-// --- Função para Exibir Erros da API de Consulta (Widevoice API) ---
-function handleApiError(erro) {
-    const consultarBtn = getConsultarBtn();
-    const baixarLoteBtn = getBaixarLoteBtn();
-    const chamadasTableBody = getChamadasTableBody();
-
-    console.error('Erro na consulta:', erro);
-    showStatusError(erro.message || 'Ocorreu um erro desconhecido durante a consulta.');
-
-    if (chamadasTableBody) chamadasTableBody.innerHTML = '';
-
-    if (consultarBtn) enableConsultarBtn(); // Reabilita o botão Consultar
-    if (baixarLoteBtn) {
-        hideBaixarLoteBtn(); // Garante que seja oculto em caso de erro na consulta
-        enableBaixarLoteBtn(); // Garante que seja reabilitado
-    }
-}
-
-
-// --- Funções de Consulta API (COM PAGINAÇÃO POR FATIAMENTO TEMPORAL) ---
+// --- Funções de Consulta API (COM PAGINAÇÃO POR FATIAMENTO TEMPORAL E PAGINAÇÃO NO FRONTEND) ---
 
 // Função auxiliar para buscar dados da API Widevoice usando intervalo de datas
 // Implementa a lógica de fatiamento temporal.
 // Esta função é uma helper INTERNA de consultarChamadas, NÃO PRECISA ser exportada.
 async function fetchWidevoiceDataByDateRange(urlBase, login, token, currentSearchStartApi, currentSearchEndApi, page) {
-    // A URL não tem offset/limit, apenas acao=statusreport e credenciais
     const url = `https://${urlBase}/api.php?acao=statusreport&login=${login}&token=${token}`;
-    // O intervalo de data/hora é passado no payload POST
-    const payload = { datainicio: currentSearchStartApi, datafim: currentSearchEndApi }; // Usa o parâmetro da função como o fim da faixa
+    const payload = { datainicio: currentSearchStartApi, datafim: currentSearchEndApi };
 
     const response = await fetch(url, {
         method: 'POST',
@@ -297,23 +320,31 @@ async function fetchWidevoiceDataByDateRange(urlBase, login, token, currentSearc
 
     const data = await response.json();
 
-    if (!Array.isArray(data)) {
-        throw new Error(`Resposta inesperada da API ao buscar página ${page}. Esperado um array, mas recebeu: ${typeof data}. Resposta: ${JSON.stringify(data)}`);
+    // Verifica se a resposta NÃO é um array E NÃO é null.
+    // Se for null, tratamos como um array vazio ([])
+    if (!Array.isArray(data) && data !== null) {
+        throw new Error(`Resposta inesperada da API ao buscar página ${page}. Esperado um array ou null, mas recebeu: ${typeof data}. Resposta: ${JSON.stringify(data)}`);
     }
 
-    return data; // Retorna o array de resultados da página
+    // Se a resposta for null, retorna um array vazio. Caso contrário, retorna os dados (que agora sabemos que é um array).
+    return data === null ? [] : data;
 }
 
 
 export async function consultarChamadas() {
     // Gerencia o estado dos botões e status no início
     disableConsultarBtn();
-    hideBaixarLoteBtn();
+    hideBaixarLoteBtn(); // Esconde o botão de download em lote
     enableBaixarLoteBtn(); // Garante que não fique desabilitado se estava
     clearStatus();
+    hidePaginationControls(); // Esconde controles de paginação
     const chamadasTableBody = getChamadasTableBody();
     if (chamadasTableBody) chamadasTableBody.innerHTML = ''; // Limpa a tabela
-    urlsGravacoesEncontradas = []; // Limpa resultados anteriores
+
+    allResults = []; // Zera todos os resultados brutos armazenados
+    urlsGravacoesEncontradas = []; // Zera a lista para download (e AGORA para exibição paginada)
+    currentPage = 1; // Reseta a página atual
+
 
     const formData = getAndValidateFormData();
     if (!formData) {
@@ -325,7 +356,6 @@ export async function consultarChamadas() {
     showStatusLoading(MESSAGES.LOADING + ' (Iniciando busca por fatiamento temporal...)');
     salvarConfiguracoes();
 
-    let allResults = [];
     let page = 1; // Usado para feedback e log, representando cada tentativa/faixa de busca.
     // Variável para controlar o início do próximo intervalo de busca (começa com o datainicio original)
     let currentSearchStart = new Date(formData.dateInicioObj); // Começa com o objeto Date original
@@ -340,7 +370,8 @@ export async function consultarChamadas() {
             if (page > MAX_PAGES_CONSULTATION) {
                 console.warn(`Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Interrompendo a busca.`);
                 // Exibe o aviso de limite máximo imediatamente
-                showStatusWarning(MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length) + ` ⚠️ Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Resultados podem estar incompletos.`);
+                // A mensagem final será exibida no finally com base na quantidade de gravações encontradas
+                // showStatusWarning(MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length) + ` ⚠️ Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Resultados podem estar incompletos.`);
                 // Quebra o loop
                 break;
             }
@@ -350,12 +381,11 @@ export async function consultarChamadas() {
             const startApiFormatted = `${currentSearchStart.getFullYear()}-${String(currentSearchStart.getMonth() + 1).padStart(2, '0')}-${String(currentSearchStart.getDate()).padStart(2, '0')} ${String(currentSearchStart.getHours()).padStart(2, '0')}:${String(currentSearchStart.getMinutes()).padStart(2, '0')}:${String(currentSearchStart.getSeconds()).padStart(2, '0')}`;
 
             // A data/hora final da requisição é a datafim original da consulta.
-            // A API limita os 500 resultados DENTRO desse intervalo.
             const endApiFormatted = formData.datafimApi;
 
 
             // Atualiza o feedback de carregamento para a faixa de data/hora atual
-            showStatusLoading(`${MESSAGES.LOADING} (Buscando faixa ${startApiFormatted} até ${endApiFormatted} - tentativa ${page}, Total atual: ${allResults.length})...`);
+            showStatusLoading(`${MESSAGES.LOADING} (Buscando faixa ${startApiFormatted} até ${endApiFormatted} - tentativa ${page}, Total de resultados brutos atuais: ${allResults.length})...`);
 
 
             // Busca os dados para a faixa de data/hora atual usando a função auxiliar
@@ -370,48 +400,32 @@ export async function consultarChamadas() {
 
             // --- Condições de parada do loop ---
 
-            // 1. Checa primeiro se a API retornou um array vazio para este intervalo.
-            // Isso geralmente significa que não há mais dados NESTA faixa ou posterior.
+            // Se a API retornou um array vazio (ou null tratado como vazio) para este intervalo.
             if (data.length === 0) {
                 console.log(`API retornou 0 resultados para faixa ${startApiFormatted} a ${endApiFormatted}. Parando a busca.`);
-                // Limpa o status de carregamento e exibe uma mensagem de sucesso final (se não já foi definido por limite max)
-                if (!getStatusMessageArea()?.innerHTML.includes('Limite máximo')) {
-                    clearStatus(); // Limpa o status de carregamento
-                    // Verifica se já havia resultados antes de parar para não exibir sucesso com 0 total se o primeiro fetch já foi 0
-                    if (allResults.length > 0) {
-                        showStatusSuccess(`${MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length)}. Total de resultados finais: ${allResults.length}`);
-                    } else {
-                        showStatusWarning(MESSAGES.NO_RESULTS); // Nenhum resultado encontrado em nenhuma faixa
-                    }
-                }
-                // Não precisamos concatenar data aqui, pois é vazio.
+                // Não precisamos exibir status de sucesso/nenhum resultado aqui.
+                // Isso será feito no finally com base na lista final de gravações.
                 break; // Sai do loop principal de paginação
             }
 
 
-            // 2. Se chegou até aqui, a API retornou dados (data.length > 0). Adiciona esses resultados aos resultados totais.
+            // Se chegou até aqui, a API retornou dados (data.length > 0). Adiciona esses resultados aos resultados totais brutos.
             allResults = allResults.concat(data);
 
-            // 3. Se a quantidade de resultados retornados é menor que o limite de 500, significa que esta é a última página com dados
+            // Se a quantidade de resultados retornados é menor que o limite de 500, significa que esta é a última página com dados
             // NESTA faixa temporal e, provavelmente, em todas as faixas subsequentes até a datafim original.
             if (data.length < API_LIMIT_PER_PAGE) {
                 console.log(`API retornou ${data.length} resultados (< ${API_LIMIT_PER_PAGE}) para faixa ${startApiFormatted} a ${endApiFormatted}. Assumindo fim da busca.`);
-                // Limpa o status de carregamento e exibe uma mensagem de sucesso final (se não já foi definido por limite max)
-                if (!getStatusMessageArea()?.innerHTML.includes('Limite máximo')) {
-                    clearStatus(); // Limpa o status de carregamento
-                    showStatusSuccess(`${MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length)}. Total de resultados finais: ${allResults.length}`);
-                }
+                // Não precisamos exibir status de sucesso aqui.
+                // Isso será feito no finally com base na lista final de gravações.
                 break; // Sai do loop principal de paginação
             }
-
 
             // Se o loop não parou (data.length === API_LIMIT_PER_PAGE),
             // significa que há pelo menos 500 resultados NESTA faixa temporal.
             // Precisamos encontrar a data/hora mais recente entre eles
             // e definir o início da próxima busca para 1 segundo após essa data/hora.
             try {
-                // Encontra o registro com a data/hora mais recente no array 'data'
-                // Assume que 'datahora' existe e é comparável como string 'YYYY-MM-DD HH:mm:ss'
                 const latestRecord = data.reduce((latest, current) => {
                     if (!latest || (current.datahora && current.datahora > latest.datahora)) {
                         return current;
@@ -423,23 +437,17 @@ export async function consultarChamadas() {
 
 
                 if (!latestDatahoraStr) {
-                    // Se nenhum registro válido com datahora foi encontrado nos 500 resultados
-                    // Isso é um erro grave na resposta da API se ela retornou 500 resultados mas nenhum com datahora
                     throw new Error("Nenhum registro com campo 'datahora' válido encontrado nos resultados da página.");
                 }
 
-                // Converte a string datahora mais recente para um objeto Date
-                // Substitui o espaço por 'T' para parsing confiável no construtor Date (formato ISO 8601)
                 const latestDate = new Date(latestDatahoraStr.replace(' ', 'T'));
 
                 if (isNaN(latestDate.getTime())) {
                     throw new Error(`Datahora inválida no último registro ('${latestDatahoraStr}').`);
                 }
 
-                // Define o início da próxima busca como 1 segundo após a data mais recente
                 currentSearchStart = new Date(latestDate.getTime() + 1000);
 
-                // Loga a data de início da próxima busca (no fuso horário local do navegador para clareza)
                 console.log(`Faixa retornou ${API_LIMIT_PER_PAGE} resultados. Próxima busca inicia em ${currentSearchStart.toLocaleString()}.`);
 
             } catch (dateError) {
@@ -451,14 +459,79 @@ export async function consultarChamadas() {
             // Incrementa a página/tentativa de busca para o feedback
             page++;
 
-            // O loop continua se currentSearchStart ainda for <= originalSearchEnd e não houve break.
-
         } // Fim do loop while (currentSearchStart <= originalSearchEnd)
 
 
-        // 6. Processa e exibe TODOS os resultados combinados (agora em allResults)
-        // displayResults foi ajustada para não limpar o status ao ser chamada
-        displayResults(allResults, formData.cleanUserUrl);
+        // --- Processamento final após obter TODOS os resultados brutos ---
+
+        // ** AGORA: Filtra TODOS os resultados brutos para pegar APENAS aqueles com gravação **
+        // ** E popula a lista urlsGravacoesEncontradas COM OBJETOS MAIS COMPLETOS para exibição **
+        urlsGravacoesEncontradas = allResults
+            .filter(chamada => chamada.gravacao && chamada.gravacao.trim() !== '') // Filtra APENAS quem tem gravação
+            .map(chamada => {
+                // Constroi o objeto para exibição e download com todos os campos necessários
+                const caminho = chamada.gravacao.replaceAll("\\/", "/");
+                const urlGravacao = chamada.recording_url || (caminho ? `https://${formData.cleanUserUrl}/gravador28/${caminho}.gsm` : '#');
+
+                // Determina Origem e Destino para armazenar no objeto
+                let origem = 'N/A';
+                let destino = 'N/A';
+                if (chamada.chamada === 'E') { // Chamada de Entrada
+                    origem = chamada.call_entrada || 'N/A';
+                    destino = chamada.numero || chamada.ramal || 'N/A';
+                } else if (chamada.chamada === 'S') { // Chamada de Saída
+                    origem = chamada.ramal || chamada.numero || 'N/A';
+                    destino = chamada.numero || chamada.call_entrada || 'N/A';
+                } else {
+                    origem = chamada.ramal || chamada.numero || chamada.call_entrada || 'N/A';
+                    destino = 'N/A';
+                }
+
+                return {
+                    // Inclui todos os campos necessários para exibição E download
+                    numero: chamada.numero, // Adiciona o número da chamada
+                    datahora: chamada.datahora,
+                    src: origem, // Adiciona origem calculada
+                    dst: destino, // Adiciona destino calculado
+                    duration: chamada.duracao, // Adiciona duração bruta
+                    url: urlGravacao // Adiciona a URL da gravação
+                };
+            })
+            .filter(item => item.url && item.url !== '#'); // Filtra novamente para garantir URL válida no objeto final
+
+
+        // Exibe os resultados da PRIMEIRA página dos ITENS COM GRAVAÇÃO
+        // A função displayResults foi modificada para receber APENAS os dados da página a ser exibida (que já são os itens com gravação)
+        showPage(1, formData.cleanUserUrl); // Exibe a primeira página por padrão
+
+
+        // Gerencia o botão de baixar em lote e a mensagem final de status
+        const numGravacoesEncontradas = urlsGravacoesEncontradas.length;
+
+        if (numGravacoesEncontradas > 0) {
+            showBaixarLoteBtn();
+            // Exibe status de sucesso informando quantas gravações foram encontradas
+            // Se a busca foi interrompida pelo limite máximo, a mensagem do limite máximo já deve estar lá
+            if (!getStatusMessageArea()?.innerHTML.includes('Limite máximo')) {
+                showStatusSuccess(`${MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length)}. ${numGravacoesEncontradas} gravações encontradas.`);
+            } else {
+                // Se o limite máximo foi atingido, mantém a mensagem de aviso e adiciona a contagem de gravações
+                const currentStatusText = getStatusMessageArea()?.textContent || '';
+                getStatusMessageArea().textContent = `${currentStatusText} ${numGravacoesEncontradas} gravações encontradas.`;
+            }
+
+        } else if (allResults.length > 0 && numGravacoesEncontradas === 0) {
+            // Se encontrou resultados brutos, mas NENHUM com gravação
+            hideBaixarLoteBtn();
+            showStatusWarning(MESSAGES.NO_RECORDINGS_FOUND_FILTERED);
+
+        } else {
+            // Se não encontrou resultados brutos NENHUM (allResults.length === 0)
+            hideBaixarLoteBtn();
+            showStatusWarning(MESSAGES.NO_RESULTS); // Nenhum resultado encontrado no período ou nenhuma gravação
+
+        }
+
 
     } catch (erro) {
         // Lidar com quaisquer erros que ocorreram durante as requisições (HTTP fetch, array inválido, etc.)
@@ -467,16 +540,110 @@ export async function consultarChamadas() {
     } finally {
         // Garante que o botão Consultar seja reabilitado
         enableConsultarBtn();
-        // Garante que o botão de download em lote seja tratado (exibido ou oculto)
-        const baixarLoteBtnFinal = getBaixarLoteBtn();
-        if (baixarLoteBtnFinal) {
-            if (urlsGravacoesEncontradas.length > 0) {
-                showBaixarLoteBtn();
-            } else {
-                hideBaixarLoteBtn();
-            }
-            enableBaixarLoteBtn(); // Garante que não fique desabilitado
+        // Garante que o botão de download em lote seja reabilitado (visibilidade já tratada)
+        enableBaixarLoteBtn();
+
+        // Se houver gravações para exibir (mesmo que < resultsPerPage), mostra os controles de paginação
+        // A paginação agora se baseia em urlsGravacoesEncontradas
+        if (urlsGravacoesEncontradas.length > 0) {
+            showPaginationControls();
+            // Atualiza a info da página (já feito em showPage, mas bom garantir)
+            const totalPages = Math.ceil(urlsGravacoesEncontradas.length / resultsPerPage); // Baseado em gravações
+            updatePageInfo(currentPage, totalPages);
+            updatePaginationButtons(); // Atualiza o estado dos botões de paginação (baseado em gravações)
+        } else {
+            // Se não há gravações, esconde os controles de paginação
+            hidePaginationControls();
         }
+    }
+}
+
+
+// --- Funções de Paginação no Frontend (AGORA BASEADO EM GRAVAÇÕES ENCONTRADAS) ---
+
+// Função para exibir uma página específica de resultados (agora, de gravações encontradas)
+function showPage(page, userUrlBase) {
+    const startIndex = (page - 1) * resultsPerPage;
+    // O endIndex não precisa ser ajustado, slice lida com o fim do array
+    const endIndex = startIndex + resultsPerPage;
+    // FATIA AGORA urlsGravacoesEncontradas
+    const paginatedResults = urlsGravacoesEncontradas.slice(startIndex, endIndex);
+
+    // Exibe apenas os resultados da página atual (que já são os itens com gravação)
+    displayResults(paginatedResults, userUrlBase);
+
+    // Atualiza as variáveis de estado e os controles de paginação
+    currentPage = page;
+    // TOTAL DE PÁGINAS AGORA SE BASEIA EM urlsGravacoesEncontradas.length
+    const totalPages = Math.ceil(urlsGravacoesEncontradas.length / resultsPerPage);
+    updatePageInfo(currentPage, totalPages);
+    updatePaginationButtons();
+}
+
+// Função para atualizar o estado dos botões de paginação (habilitado/desabilitado)
+// AGORA SE BASEIA EM GRAVAÇÕES ENCONTRADAS
+function updatePaginationButtons() {
+    const totalPages = Math.ceil(urlsGravacoesEncontradas.length / resultsPerPage); // Baseado em gravações
+
+    if (currentPage === 1) {
+        disablePrevPageBtn();
+    } else {
+        enablePrevPageBtn();
+    }
+
+    // Desabilita 'Próxima' se estiver na última página OU se não houver gravações
+    if (currentPage === totalPages || urlsGravacoesEncontradas.length === 0) {
+        disableNextPageBtn();
+    } else {
+        enableNextPageBtn();
+    }
+    // Se não houver gravações, desabilita ambos os botões
+    if (urlsGravacoesEncontradas.length === 0) {
+        disablePrevPageBtn();
+        disableNextPageBtn();
+    }
+}
+
+// Função para ir para a página anterior
+function goToPreviousPage() {
+    const userUrlBase = getElement('url_base')?.value.trim().replace(/^https?:\/\//, '') || ''; // Continua pegando do DOM
+    if (currentPage > 1) {
+        showPage(currentPage - 1, userUrlBase);
+    }
+}
+
+// Função para ir para a próxima página
+function goToNextPage() {
+    const totalPages = Math.ceil(urlsGravacoesEncontradas.length / resultsPerPage); // Baseado em gravações
+    const userUrlBase = getElement('url_base')?.value.trim().replace(/^https?:\/\//, '') || ''; // Continua pegando do DOM
+
+    if (currentPage < totalPages) {
+        showPage(currentPage + 1, userUrlBase);
+    }
+}
+
+
+// --- Funções de Exibir Erros da API de Consulta (Widevoice API) ---
+function handleApiError(erro) {
+    const consultarBtn = getConsultarBtn();
+    const baixarLoteBtn = getBaixarLoteBtn();
+    const chamadasTableBody = getChamadasTableBody();
+
+    console.error('Erro na consulta:', erro);
+    showStatusError(erro.message || 'Ocorreu um erro desconhecido durante a consulta.');
+
+    if (chamadasTableBody) chamadasTableBody.innerHTML = '';
+
+    allResults = []; // Limpa resultados brutos em caso de erro
+    urlsGravacoesEncontradas = []; // Limpa lista de download/exibição
+
+    hidePaginationControls(); // Esconde controles de paginação
+    currentPage = 1; // Reseta a página
+
+    if (consultarBtn) enableConsultarBtn(); // Reabilita o botão Consultar
+    if (baixarLoteBtn) {
+        hideBaixarLoteBtn(); // Garante que seja oculto em caso de erro na consulta
+        enableBaixarLoteBtn(); // Garante que seja reabilitado
     }
 }
 
@@ -485,6 +652,7 @@ export async function consultarChamadas() {
 
 // Função principal do botão de download em lote (apenas confirmação e chamada)
 export async function baixarGravacoesEmLote() {
+    // Esta função já usa urlsGravacoesEncontradas, então não precisa mudar
     const numGravacoes = urlsGravacoesEncontradas.length;
 
     if (numGravacoes === 0) {
@@ -499,29 +667,25 @@ export async function baixarGravacoesEmLote() {
         return;
     }
 
-    // Obtém o estado do checkbox de conversão
     const convertCheckbox = getElement(CHECKBOX_CONVERT_TO_MP3_ID);
     const convertToMp3 = convertCheckbox ? convertCheckbox.checked : false;
 
-    // Chama a função auxiliar que faz a comunicação com o backend e salva o arquivo
-    // Passa a lista de gravações E o estado da conversão para o backend
     fetchAndSaveZipFromBackend(urlsGravacoesEncontradas, convertToMp3);
 }
 
 // Função auxiliar para baixar o arquivo ZIP do backend e salvar (agora separada)
-// Agora aceita a flag convertToMp3
 async function fetchAndSaveZipFromBackend(recordingsList, convertToMp3) {
     const baixarLoteBtn = getBaixarLoteBtn();
+    const consultarBtn = getConsultarBtn(); // Adicionado para desabilitar durante o download
 
     showStatusLoading(MESSAGES.DOWNLOAD_PROCESSING);
     if (baixarLoteBtn) disableBaixarLoteBtn(); // Desabilita o botão
+    if (consultarBtn) disableConsultarBtn(); // Desabilita o botão Consultar também
+    hidePaginationControls(); // Esconde paginação durante o download
 
     try {
-        // Utiliza a função de fetch para o backend importada
-        // Passa a lista e a flag convertToMp3 no corpo da requisição
         const response = await fetchBackendZip(recordingsList, convertToMp3);
 
-        // --- TRATAMENTO DA RESPOSTA DO BACKEND (COM DETALHES DE ERRO) ---
         if (!response.ok) {
             console.error(`Resposta de erro do backend: Status ${response.status}`);
 
@@ -531,17 +695,14 @@ async function fetchAndSaveZipFromBackend(recordingsList, convertToMp3) {
 
                 if (errorData && (errorData.error || errorData.details || errorData.failedDownloads || errorData.failedConversions)) {
                     const errorMsg = errorData.error || errorData.details || `Status: ${response.status}`;
-                    const failedDownloadsItems = errorData.failedDownloads; // Lista de falhas de download
-                    const failedConversionsItems = errorData.failedConversions; // Lista de falhas de conversão
+                    const failedDownloadsItems = errorData.failedDownloads;
+                    const failedConversionsItems = errorData.failedConversions;
 
-
-                    // Usa a mensagem detalhada que agora aceita ambas as listas de falha
                     showStatusError(MESSAGES.DOWNLOAD_FAILED_DETAILS(errorMsg, failedDownloadsItems, failedConversionsItems));
-                    return; // Sai da função após tratar o erro detalhado
+                    return;
 
                 } else {
                     console.warn('Resposta de erro do backend inesperada (formato JSON desconhecido).');
-                    // Lança um erro para ser capturado pelo catch principal
                     throw new Error(`Erro no formato da resposta de erro do backend. Status ${response.status}. Resposta JSON: ${JSON.stringify(errorData)}`);
                 }
 
@@ -549,63 +710,46 @@ async function fetchAndSaveZipFromBackend(recordingsList, convertToMp3) {
                 console.error('Erro ao ler resposta de erro do backend como JSON, tentando como texto:', jsonError);
                 try {
                     const errorText = await response.text();
-                    console.error('Corpo da resposta de erro como texto:', errorText);
-                    // Lança um erro com o status e o texto da resposta como detalhes
+                    console.error('Corpo da resposta de error como texto:', errorText);
                     throw new Error(`Erro do backend: Status ${response.status}. Resposta: ${errorText}`);
                 } catch (textError) {
-                    // Lança um erro se não conseguir ler nem como texto
                     throw new Error(`Erro do backend: Status ${response.status}. Não foi possível ler a resposta.`);
                 }
             }
         }
 
-        // ** SE response.ok FOR TRUE (Status 200 OK) **
-        // LER O CORPO DA RESPOSTA COMO BLOB (É O ARQUIVO ZIP)
         console.log('Resposta do backend recebida (Status 200 OK). Lendo corpo como Blob...');
         const zipBlob = await response.blob();
 
-        // Utiliza a função de salvar arquivo importada
         saveBlobAsFile(zipBlob, response.headers);
-
         // Feedback de sucesso é dado DENTRO de saveBlobAsFile
 
     } catch (error) {
         console.error('Erro na comunicação com o backend ou processamento/exibição do erro no frontend:', error);
-        showStatusError(`❌ Erro: ${error.message}`); // Exibe o error formatado
+        showStatusError(`❌ Erro: ${error.message}`);
 
     } finally {
-        // Reabilita o botão ao final
         if (baixarLoteBtn) enableBaixarLoteBtn();
+        if (consultarBtn) enableConsultarBtn();
+        // Reexibe os controles de paginação se houver GRAVAÇÕES para exibir
+        if (urlsGravacoesEncontradas.length > 0) { // AGORA VERIFICA urlsGravacoesEncontradas
+            showPaginationControls();
+            updatePaginationButtons();
+        }
     }
 }
-
-// CORRIGIDO: Função fetchBackendZip precisa enviar a flag convertToMp3
-// backendApi.js
-// import { BACKEND_DOWNLOAD_URL } from './constants.js';
-// export async function fetchBackendZip(recordingsList, convertToMp3) { // Aceita a flag
-//     const backendUrl = BACKEND_DOWNLOAD_URL;
-//     const response = await fetch(backendUrl, {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ recordings: recordingsList, convertToMp3: convertToMp3 }), // Envia como objeto com flag
-//     });
-//     return response;
-// }
 
 
 // --- Event Listeners ---
 
-// Carrega configurações ao carregar a janela
 window.addEventListener('load', carregarConfiguracoes);
 
-// Adiciona os event listeners aos botões usando o DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     const consultarBtn = getConsultarBtn();
     if(consultarBtn) {
         consultarBtn.addEventListener('click', consultarChamadas);
     }
 
-    // Usa o ID corrigido 'limparCamposBtn'
     const limparCamposBtn = getElement('limparCamposBtn');
     if(limparCamposBtn) {
         limparCamposBtn.addEventListener('click', limparCampos);
@@ -615,4 +759,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if(baixarLoteBtn) {
         baixarLoteBtn.addEventListener('click', baixarGravacoesEmLote);
     }
+
+    const prevPageBtn = getPrevPageBtn();
+    if(prevPageBtn) {
+        prevPageBtn.addEventListener('click', goToPreviousPage);
+    }
+
+    const nextPageBtn = getNextPageBtn();
+    if(nextPageBtn) {
+        nextPageBtn.addEventListener('click', goToNextPage);
+    }
+
+    // Inicializa o estado dos botões de paginação ao carregar a página
+    // (eles estarão desabilitados e ocultos se urlsGravacoesEncontradas estiver vazio)
+    updatePaginationButtons();
 });
