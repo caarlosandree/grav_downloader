@@ -42,6 +42,10 @@ body {
     color: var(--text-color);
     line-height: 1.6;
     margin: 0;
+    display: flex; /* Adicionado: Usa flexbox no body para centralizar o conteúdo principal se necessário */
+    flex-direction: column; /* Adicionado: Organiza os filhos em coluna */
+    align-items: center; /* Adicionado: Centraliza os filhos horizontalmente */
+    min-height: 100vh; /* Adicionado: Garante altura mínima para o body */
 }
 
 h1 {
@@ -62,10 +66,11 @@ h1 {
     background-color: var(--card-background);
     box-shadow: 0 6px 15px var(--shadow-color);
     border-radius: var(--border-radius);
+    width: 100%; /* Garante que o container ocupe a largura disponível até o max-width */
 }
 
 .input-group {
-    flex: 1 1 220px;
+    flex: 1 1 220px; /* Permite que os grupos de input cresçam/diminuam e tenham uma base de 220px */
     display: flex;
     flex-direction: column;
 }
@@ -79,7 +84,8 @@ label {
 }
 
 input[type="text"],
-input[type="datetime-local"] {
+input[type="datetime-local"],
+input[type="password"] { /* Adicionado type password caso use */
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -90,19 +96,126 @@ input[type="datetime-local"] {
 }
 
 input[type="text"]:focus,
-input[type="datetime-local"]:focus {
+input[type="datetime-local"]:focus,
+input[type="password"]:focus { /* Adicionado type password caso use */
     outline: none;
     border-color: var(--secondary-color);
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Ajustado para usar rgba com transparência */
+}
+
+/* Estilo para o grupo do checkbox customizado */
+.form-container .checkbox-group {
+    flex-basis: 100%; /* Faz o grupo do checkbox ocupar a linha inteira no layout flex */
+    display: flex;
+    align-items: center;
+    padding-top: 5px;
+    padding-bottom: 15px;
+    margin-bottom: 0;
 }
 
 
+/* --- Estilo para Checkbox Customizado (Converter para MP3) --- */
+
+/* Oculta o checkbox padrão visualmente, mas o mantém acessível para leitores de tela e navegação por teclado */
+.checkbox-group input[type="checkbox"] {
+    position: absolute;
+    opacity: 0; /* Torna-o totalmente transparente */
+    pointer-events: none; /* Não responde a eventos de mouse */
+    z-index: -1; /* Garante que não interfira em outros elementos */
+}
+
+/* Estilo base para o label que se comportará como o checkbox */
+.checkbox-group label {
+    display: inline-flex; /* Permite alinhar o pseudo-elemento (caixa) e o texto */
+    align-items: center; /* Alinha verticalmente o conteúdo */
+    position: relative; /* Necessário para posicionar os pseudo-elementos */
+    padding-left: 30px; /* Espaço à esquerda para a caixa customizada */
+    margin-bottom: 0; /* Remove margem inferior padrão de labels */
+    cursor: pointer; /* Indica que é clicável */
+    user-select: none; /* Impede seleção do texto do label */
+    color: var(--text-color); /* Usa a cor de texto definida */
+    font-weight: normal; /* Label de checkbox geralmente não é negrito */
+}
+
+/* Cria a caixa visual do checkbox customizado usando um pseudo-elemento ::before */
+.checkbox-group label::before {
+    content: ''; /* Conteúdo vazio é necessário para pseudo-elementos */
+    position: absolute;
+    top: 52%; /* Ajuste sutil: tenta mover para baixo em 2% */
+    left: 0; /* Posiciona à esquerda do padding-left */
+    transform: translateY(-50%); /* Mantém o ajuste de centralização baseado na nova posição top */
+    width: 20px; /* Largura da caixa */
+    height: 20px; /* Altura da caixa */
+    border: 2px solid var(--border-color); /* Borda da caixa */
+    border-radius: 4px; /* Bordas levemente arredondadas */
+    background-color: var(--card-background); /* Fundo da caixa (branco ou cor do card) */
+    transition: all 0.2s ease; /* Adiciona transição suave */
+    box-sizing: border-box; /* Garante que padding e borda não aumentem o tamanho */
+}
+
+/* Estilo para a marca de 'check' dentro da caixa customizada usando um pseudo-elemento ::after */
+.checkbox-group label::after {
+    content: ''; /* Conteúdo vazio */
+    position: absolute;
+    top: 52%; /* Ajuste sutil: tenta mover para baixo em 2% */
+    left: 7px; /* Posiciona o checkmark */
+    transform: translateY(-50%) rotate(45deg); /* Rotaciona para formar o check */
+    width: 6px; /* Largura do checkmark */
+    height: 12px; /* Altura do checkmark */
+    border: solid white; /* Cor do checkmark (branco) */
+    border-width: 0 2px 2px 0; /* Cria a forma do checkmark */
+    opacity: 0; /* Inicialmente invisível */
+    transition: all 0.2s ease; /* Adiciona transição suave */
+}
+
+/* Estilo da caixa quando o checkbox está marcado */
+.checkbox-group input[type="checkbox"]:checked + label::before {
+    border-color: var(--primary-color); /* Muda a cor da borda quando marcado */
+    background-color: var(--primary-color); /* Muda a cor de fundo quando marcado */
+}
+
+/* Mostra a marca de 'check' quando o checkbox está marcado */
+.checkbox-group input[type="checkbox"]:checked + label::after {
+    opacity: 1; /* Torna o checkmark visível */
+}
+
+/* Estilo para quando o checkbox está em foco (acessibilidade por teclado) */
+.checkbox-group input[type="checkbox"]:focus + label::before {
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25); /* Um glow suave ao focar (cor primária com transparência) */
+    /* Use a cor primária com transparência */
+}
+
+/* Estilo para quando o checkbox está desabilitado */
+.checkbox-group input[type="checkbox"]:disabled + label {
+    color: #a0a0a0; /* Cor de texto cinza para indicar desabilitado */
+    cursor: not-allowed; /* Cursor de não permitido */
+}
+
+.checkbox-group input[type="checkbox"]:disabled + label::before {
+    border-color: #d3d3d3; /* Borda cinza clara */
+    background-color: #e9e9eb; /* Fundo cinza claro */
+}
+
+.checkbox-group input[type="checkbox"]:disabled:checked + label::before {
+    background-color: #a0d3b4; /* Fundo verde mais claro quando marcado e desabilitado */
+    border-color: #a0d3b4;
+}
+
+.checkbox-group input[type="checkbox"]:disabled:checked + label::after {
+    border-color: #e9e9eb; /* Checkmark mais claro quando marcado e desabilitado */
+}
+
+/* Fim do Estilo para Checkbox Customizado */
+
+
+/* Estilo do grupo de botões */
 .button-group {
-    flex-basis: 100%;
+    flex-basis: 100%; /* Faz o grupo de botões ocupar a linha inteira */
     display: flex;
-    gap: 15px;
+    gap: 15px; /* Espaço entre os botões */
     justify-content: center;
     margin-top: 15px;
+    flex-wrap: wrap; /* Permite que os botões quebrem linha em telas menores */
 }
 
 
@@ -158,6 +271,10 @@ button:disabled {
 
 #resultado {
     margin-top: 30px;
+    width: 100%; /* Garante que a área de resultado ocupe a largura total */
+    max-width: 800px; /* Limita a largura máxima */
+    margin-left: auto; /* Centraliza o bloco de resultado */
+    margin-right: auto; /* Centraliza o bloco de resultado */
 }
 
 /* --- Estilos da Área de Status (Corrigido: Usando as novas variáveis de cor) --- */
@@ -173,6 +290,7 @@ button:disabled {
     justify-content: center;
     gap: 10px;
     border: 1px solid transparent; /* Adiciona borda transparente para manter consistência visual */
+    word-break: break-word; /* Quebra palavras longas */
 }
 
 /* Estilos baseados nas classes adicionadas pelo JS */
@@ -203,6 +321,15 @@ button:disabled {
     /* A cor do ícone é herdada do texto pai */
 }
 
+/* Ajuste para o ícone giratório de loading */
+.status-message.loading .fa-spinner {
+    animation: spin 1s linear infinite; /* Garante que o ícone de spinner gire */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 
 /* --- Estilos da Tabela --- */
 #chamadasTable {
@@ -270,7 +397,7 @@ button:disabled {
     background-color: var(--secondary-color);
     color: white; /* Cor de texto branca */
     display: block;
-    margin: 30px auto;
+    margin: 30px auto; /* Centraliza e adiciona margem */
     max-width: 300px;
 }
 #baixarLoteBtn:hover:not(:disabled) {
@@ -300,7 +427,7 @@ button:disabled {
     }
 
     .input-group {
-        flex-basis: 100%;
+        flex-basis: 100%; /* Garante que cada input group ocupe a largura total */
     }
 
     .button-group {
@@ -338,6 +465,7 @@ button:disabled {
         border-bottom: 1px dotted #ccc;
         padding: 8px 0;
         position: relative;
+        word-break: break-word; /* Garante quebra de texto também no modo card */
     }
     #chamadasTable td:last-child {
         border-bottom: none;
@@ -353,7 +481,7 @@ button:disabled {
         color: var(--text-color);
     }
     #chamadasTable td a {
-        justify-content: flex-end;
+        justify-content: flex-end; /* Alinha o link com o ícone à direita no modo card */
     }
 }
 
