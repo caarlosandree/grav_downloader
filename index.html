@@ -4,9 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Consulta de Chamadas WideVoice</title>
-    <!-- Google Fonts - Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome Free (para ícones) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <link rel="stylesheet" href="style.css">
@@ -17,37 +15,39 @@
 <h1>Consulta de Chamadas - Widevoice</h1>
 
 <div class="form-container">
-    <div class="input-group">
-        <label for="url_base">URL do servidor:</label>
-        <input type="text" id="url_base" placeholder="Ex: seudominio.intelbras.com.br" required/>
+    <div class="input-row">
+        <div class="input-group">
+            <label for="url_base">URL do servidor:</label>
+            <input type="text" id="url_base" placeholder="Ex: seudominio.intelbras.com.br" required/>
+        </div>
+
+        <div class="input-group">
+            <label for="login">Login:</label>
+            <input type="text" id="login" placeholder="login" required/>
+        </div>
+
+        <div class="input-group">
+            <label for="token">Token:</label>
+            <input type="text" id="token" placeholder="token" required/>
+        </div>
     </div>
 
-    <div class="input-group">
-        <label for="login">Login:</label>
-        <input type="text" id="login" placeholder="login" required/>
+    <div class="input-row">
+        <div class="input-group">
+            <label for="datainicio">Data Início:</label>
+            <input type="datetime-local" id="datainicio" required/>
+        </div>
+
+        <div class="input-group">
+            <label for="datafim">Data Fim:</label>
+            <input type="datetime-local" id="datafim" required/>
+        </div>
     </div>
 
-    <div class="input-group">
-        <label for="token">Token:</label>
-        <input type="text" id="token" placeholder="token" required/>
-    </div>
-
-    <div class="input-group">
-        <label for="datainicio">Data Início:</label>
-        <input type="datetime-local" id="datainicio" required/>
-    </div>
-
-    <div class="input-group">
-        <label for="datafim">Data Fim:</label>
-        <input type="datetime-local" id="datafim" required/>
-    </div>
-
-    <!-- Novo grupo para o checkbox de conversão -->
     <div class="input-group checkbox-group">
         <input type="checkbox" id="convertToMp3">
         <label for="convertToMp3">Converter para MP3</label>
     </div>
-
 
     <div class="button-group">
         <button id="consultarBtn"><i class="fas fa-search"></i> Consultar</button>
@@ -61,14 +61,14 @@
     <div id="statusMessageArea" class="status-message"></div>
     <table id="chamadasTable">
         <thead>
-            <tr>
-                <th>Número</th>
-                <th>Data/Hora</th>
-                <th>Origem</th>
-                <th>Destino</th>
-                <th>Duração</th>
-                <th>Gravação</th>
-            </tr>
+        <tr>
+            <th>Número</th>
+            <th>Data/Hora</th>
+            <th>Origem</th>
+            <th>Destino</th>
+            <th>Duração</th>
+            <th>Gravação</th>
+        </tr>
         </thead>
         <tbody>
         </tbody>

@@ -1,51 +1,72 @@
 /* Importação da fonte Roboto */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-/* Definição de variáveis CSS para a paleta de cores e outros valores */
-:root {
-    --primary-color: #28a745; /* Um verde um pouco mais vibrante */
-    --primary-color-dark: #218838; /* Tom mais escuro para hover */
-    --secondary-color: #21730e; /* Um azul padrão para destacar */
-    --secondary-color-dark: #1b5e0c; /* Tom mais escuro para hover */
-    --text-color: #333;
-    --background-color: #f8f9fa; /* Fundo mais claro */
-    --card-background: #fff;
-    --border-color: #dee2e6; /* Cor padrão para bordas */
-    --shadow-color: rgba(0, 0, 0, 0.15); /* Sombra sutilmente mais pronunciada */
-    --border-radius: 0.3rem; /* Raio de borda padrão (aprox 4.8px) */
-
-    /* Cores para mensagens de status (Corrigido: Definindo cores de fundo, texto e borda para cada status) */
-    --status-loading-bg: #e0f7fa; /* Light Blue Background */
-    --status-loading-text: #007b8a; /* Darker Blue Text */
-    --status-loading-border: #b2ebf2; /* Border Blue */
-
-    --status-success-bg: #e8f5e9; /* Light Green Background */
-    --status-success-text: #1b5e20; /* Darker Green Text */
-    --status-success-border: #a5d6a7; /* Border Green */
-
-    --status-warning-bg: #fffde7; /* Light Yellow Background */
-    --status-warning-text: #fbc02d; /* Darker Yellow Text */
-    --status-warning-border: #ffea00; /* Border Yellow */
-
-    --status-error-bg: #ffebee; /* Light Red Background */
-    --status-error-text: #c62828; /* Darker Red Text */
-    --status-error-border: #ef9a9a; /* Border Red */
-
-    /* Removidas as variáveis --status-text-light e --status-text-dark pois não serão mais usadas diretamente */
+/* Fontes Intelbras */
+@font-face{
+    font-family: 'intelbras light';
+    src: url(./fontes/IntelbrasSans-Light.ttf) format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
 }
 
+@font-face{
+    font-family: 'intelbras medium';
+    src: url(./fontes/IntelbrasSans-Medium.ttf) format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'intelbras regular';
+    src: url(./fontes/IntelbrasSans-Regular.ttf) format('truetype');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Definição de variáveis CSS para a paleta de cores e outros valores */
+:root {
+    --primary-color: #28a745;
+    --primary-color-dark: #218838;
+    --secondary-color: #21730e;
+    --secondary-color-dark: #1b5e0c;
+    --text-color: #333;
+    --background-color: #f8f9fa;
+    --card-background: #fff;
+    --border-color: #dee2e6;
+    --shadow-color: rgba(0, 0, 0, 0.15);
+    --border-radius: 0.3rem;
+
+    --status-loading-bg: #e0f7fa;
+    --status-loading-text: #007b8a;
+    --status-loading-border: #b2ebf2;
+
+    --status-success-bg: #e8f5e9;
+    --status-success-text: #1b5e20;
+    --status-success-border: #a5d6a7;
+
+    --status-warning-bg: #fffde7;
+    --status-warning-text: #fbc02d;
+    --status-warning-border: #ffea00;
+
+    --status-error-bg: #ffebee;
+    --status-error-text: #c62828;
+    --status-error-border: #ef9a9a;
+}
 
 body {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'intelbras regular', sans-serif;
     padding: 20px;
     background: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
     margin: 0;
-    display: flex; /* Adicionado: Usa flexbox no body para centralizar o conteúdo principal se necessário */
-    flex-direction: column; /* Adicionado: Organiza os filhos em coluna */
-    align-items: center; /* Adicionado: Centraliza os filhos horizontalmente */
-    min-height: 100vh; /* Adicionado: Garante altura mínima para o body */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
 }
 
 h1 {
@@ -53,26 +74,8 @@ h1 {
     text-align: center;
     margin-bottom: 30px;
     font-size: 2.2em;
+    font-family: 'intelbras medium', sans-serif;
     font-weight: 700;
-}
-
-.form-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    max-width: 800px;
-    margin: 0 auto 30px auto;
-    padding: 25px;
-    background-color: var(--card-background);
-    box-shadow: 0 6px 15px var(--shadow-color);
-    border-radius: var(--border-radius);
-    width: 100%; /* Garante que o container ocupe a largura disponível até o max-width */
-}
-
-.input-group {
-    flex: 1 1 220px; /* Permite que os grupos de input cresçam/diminuam e tenham uma base de 220px */
-    display: flex;
-    flex-direction: column;
 }
 
 label {
@@ -81,11 +84,46 @@ label {
     font-weight: 500;
     color: var(--text-color);
     font-size: 0.95em;
+    font-family: 'intelbras light', sans-serif;
 }
+
+/* --- Estilo para o Contêiner do Formulário (o "Card") --- */
+.form-container {
+    background-color: var(--card-background);
+    padding: 30px; /* Espaçamento interno */
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 10px var(--shadow-color);
+    width: 100%;
+    max-width: 700px; /* Largura máxima do card */
+    margin: 20px auto; /* Centraliza o card na página */
+    box-sizing: border-box;
+    display: flex; /* Usa flexbox para dispor os elementos internos (linhas, checkbox, botões) */
+    flex-direction: column; /* Empilha os elementos internos verticalmente */
+    gap: 20px; /* Espaçamento vertical entre os elementos (input-rows, checkbox-group, button-group) */
+}
+
+
+/* --- Estilo para as Linhas de Inputs (Novidade) --- */
+.input-row {
+    display: flex; /* Usa flexbox para dispor os input-groups horizontalmente dentro da linha */
+    gap: 20px; /* Espaçamento horizontal entre os input-groups */
+    flex-wrap: wrap; /* Permite que os input-groups quebrem para a linha de baixo em telas menores */
+}
+
+/* --- Estilo para Cada Grupo de Input (Label + Input) --- */
+.input-group {
+    flex: 1; /* Permite que cada input-group cresça e ocupe o espaço disponível na linha */
+    /* flex: 1 1 30%; Removido/Comentado pois o flex: 1; na linha já controla a distribuição */
+    /* max-width: 30%; Removido */
+    display: flex;
+    flex-direction: column; /* Mantém a label e o input empilhados dentro de cada grupo */
+    /* margin-bottom: 0; Removido, o gap do form-container e do input-row gerenciam o espaçamento */
+}
+
 
 input[type="text"],
 input[type="datetime-local"],
-input[type="password"] { /* Adicionado type password caso use */
+input[type="password"] {
     padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -93,24 +131,119 @@ input[type="password"] { /* Adicionado type password caso use */
     width: 100%;
     box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: 'intelbras regular', sans-serif;
 }
 
-input[type="text"]:focus,
-input[type="datetime-local"]:focus,
-input[type="password"]:focus { /* Adicionado type password caso use */
-    outline: none;
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Ajustado para usar rgba com transparência */
+button {
+    font-family: 'intelbras medium', sans-serif;
 }
 
-/* Estilo para o grupo do checkbox customizado */
-.form-container .checkbox-group {
-    flex-basis: 100%; /* Faz o grupo do checkbox ocupar a linha inteira no layout flex */
-    display: flex;
-    align-items: center;
-    padding-top: 5px;
-    padding-bottom: 15px;
-    margin-bottom: 0;
+/* --- Ajustes de Responsividade --- */
+@media (max-width: 768px) {
+    body {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+    }
+
+    .form-container {
+        padding: 20px; /* Ajuste o padding do card em mobile */
+        gap: 15px; /* Ajuste o espaçamento vertical entre os elementos do card em mobile */
+        margin-bottom: 20px;
+    }
+
+    .input-row {
+        flex-direction: column; /* Empilha os input-groups verticalmente nas linhas em mobile */
+        gap: 15px; /* Espaçamento vertical entre os input-groups quando empilhados */
+    }
+
+
+    .input-group {
+        flex-basis: 100%; /* Garante que cada input group ocupe a largura total em mobile */
+        max-width: 100%; /* Garante que não ultrapasse */
+        /* flex: none; ou ajuste se necessário para o comportamento empilhado */
+    }
+
+    .button-group {
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    button {
+        max-width: 100%;
+        padding: 12px 20px;
+    }
+
+    #chamadasTable {
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    /* Implementação da visualização 'card' para as linhas da tabela em telas menores */
+    #chamadasTable thead {
+        display: none;
+    }
+    #chamadasTable tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--card-background);
+        box-shadow: 0 2px 5px var(--shadow-color);
+        padding: 10px;
+    }
+    #chamadasTable td {
+        display: block;
+        text-align: right;
+        border-bottom: 1px dotted #ccc;
+        padding: 8px 0;
+        position: relative;
+        word-break: break-word; /* Garante quebra de texto também no modo card */
+    }
+    #chamadasTable td:last-child {
+        border-bottom: none;
+    }
+    #chamadasTable td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 45%;
+        font-weight: bold;
+        text-transform: uppercase;
+        text-align: left;
+        color: var(--text-color);
+    }
+    #chamadasTable td a {
+        justify-content: flex-end; /* Alinha o link com o ícone à direita no modo card */
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .form-container {
+        padding: 15px; /* Ajuste ainda mais o padding do card em telas muito pequenas */
+        gap: 10px; /* Ajuste o espaçamento vertical */
+    }
+
+    button {
+        padding: 10px 15px;
+    }
+
+    #chamadasTable td::before {
+        left: 5px;
+        width: 40%;
+    }
 }
 
 
@@ -141,9 +274,9 @@ input[type="password"]:focus { /* Adicionado type password caso use */
 .checkbox-group label::before {
     content: ''; /* Conteúdo vazio é necessário para pseudo-elementos */
     position: absolute;
-    top: 52%; /* Ajuste sutil: tenta mover para baixo em 2% */
+    top: 50%; /* Centraliza verticalmente */
     left: 0; /* Posiciona à esquerda do padding-left */
-    transform: translateY(-50%); /* Mantém o ajuste de centralização baseado na nova posição top */
+    transform: translateY(-50%); /* Ajuste fino para centralização */
     width: 20px; /* Largura da caixa */
     height: 20px; /* Altura da caixa */
     border: 2px solid var(--border-color); /* Borda da caixa */
@@ -157,7 +290,7 @@ input[type="password"]:focus { /* Adicionado type password caso use */
 .checkbox-group label::after {
     content: ''; /* Conteúdo vazio */
     position: absolute;
-    top: 52%; /* Ajuste sutil: tenta mover para baixo em 2% */
+    top: 50%; /* Centraliza verticalmente */
     left: 7px; /* Posiciona o checkmark */
     transform: translateY(-50%) rotate(45deg); /* Rotaciona para formar o check */
     width: 6px; /* Largura do checkmark */
@@ -182,7 +315,6 @@ input[type="password"]:focus { /* Adicionado type password caso use */
 /* Estilo para quando o checkbox está em foco (acessibilidade por teclado) */
 .checkbox-group input[type="checkbox"]:focus + label::before {
     box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25); /* Um glow suave ao focar (cor primária com transparência) */
-    /* Use a cor primária com transparência */
 }
 
 /* Estilo para quando o checkbox está desabilitado */
@@ -214,7 +346,7 @@ input[type="password"]:focus { /* Adicionado type password caso use */
     display: flex;
     gap: 15px; /* Espaço entre os botões */
     justify-content: center;
-    margin-top: 15px;
+    margin-top: 15px; /* Espaço acima do grupo de botões */
     flex-wrap: wrap; /* Permite que os botões quebrem linha em telas menores */
 }
 
@@ -227,7 +359,7 @@ button {
     cursor: pointer;
     transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
     flex-grow: 0;
-    max-width: 180px;
+    max-width: 180px; /* Limita a largura máxima de cada botão */
     font-weight: 500;
     text-transform: uppercase;
     display: flex;
@@ -406,105 +538,4 @@ button:disabled {
 }
 #baixarLoteBtn:active:not(:disabled) {
     transform: scale(0.98);
-}
-
-
-/* Estilos de Responsividade */
-@media (max-width: 768px) {
-    body {
-        padding: 15px;
-    }
-
-    h1 {
-        font-size: 1.8em;
-        margin-bottom: 20px;
-    }
-
-    .form-container {
-        padding: 20px;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .input-group {
-        flex-basis: 100%; /* Garante que cada input group ocupe a largura total */
-    }
-
-    .button-group {
-        flex-direction: column;
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    button {
-        max-width: 100%;
-        padding: 12px 20px;
-    }
-
-    #chamadasTable {
-        box-shadow: none;
-        border-radius: 0;
-    }
-
-    /* Implementação da visualização 'card' para as linhas da tabela em telas menores */
-    #chamadasTable thead {
-        display: none;
-    }
-    #chamadasTable tr {
-        display: block;
-        margin-bottom: 15px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-        background-color: var(--card-background);
-        box-shadow: 0 2px 5px var(--shadow-color);
-        padding: 10px;
-    }
-    #chamadasTable td {
-        display: block;
-        text-align: right;
-        border-bottom: 1px dotted #ccc;
-        padding: 8px 0;
-        position: relative;
-        word-break: break-word; /* Garante quebra de texto também no modo card */
-    }
-    #chamadasTable td:last-child {
-        border-bottom: none;
-    }
-    #chamadasTable td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 10px;
-        width: 45%;
-        font-weight: bold;
-        text-transform: uppercase;
-        text-align: left;
-        color: var(--text-color);
-    }
-    #chamadasTable td a {
-        justify-content: flex-end; /* Alinha o link com o ícone à direita no modo card */
-    }
-}
-
-@media (max-width: 480px) {
-    body {
-        padding: 10px;
-    }
-
-    h1 {
-        font-size: 1.5em;
-    }
-
-    .form-container {
-        padding: 15px;
-        gap: 10px;
-    }
-
-    button {
-        padding: 10px 15px;
-    }
-
-    #chamadasTable td::before {
-        left: 5px;
-        width: 40%;
-    }
 }
