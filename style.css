@@ -94,7 +94,7 @@ label {
     border-radius: var(--border-radius);
     box-shadow: 0 4px 10px var(--shadow-color);
     width: 100%;
-    max-width: 700px; /* Largura máxima do card */
+    max-width: 900px; /* Largura máxima do card */
     margin: 20px auto; /* Centraliza o card na página */
     box-sizing: border-box;
     display: flex; /* Usa flexbox para dispor os elementos internos (linhas, checkbox, botões) */
