@@ -5,8 +5,8 @@
 :root {
     --primary-color: #28a745; /* Um verde um pouco mais vibrante */
     --primary-color-dark: #218838; /* Tom mais escuro para hover */
-    --secondary-color: #007bff; /* Um azul padrão para destacar */
-    --secondary-color-dark: #0056b3; /* Tom mais escuro para hover */
+    --secondary-color: #21730e; /* Um azul padrão para destacar */
+    --secondary-color-dark: #1b5e0c; /* Tom mais escuro para hover */
     --text-color: #333;
     --background-color: #f8f9fa; /* Fundo mais claro */
     --card-background: #fff;

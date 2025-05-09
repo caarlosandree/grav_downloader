@@ -1,6 +1,7 @@
 // Importa tudo que é necessário de outros módulos
-import { MESSAGES, API_LIMIT_PER_PAGE, MAX_PAGES_CONSULTATION } from './constants.js';
-// Importa funções de domUtils (não precisamos importar showStatus diretamente aqui, usamos as de atalho)
+// Importa a constante para o ID do checkbox
+import { MESSAGES, API_LIMIT_PER_PAGE, MAX_PAGES_CONSULTATION, CHECKBOX_CONVERT_TO_MP3_ID } from './constants.js';
+// Importa funções de domUtils
 import { getElement, getChamadasTableBody, getBaixarLoteBtn, getConsultarBtn, showStatusLoading, showStatusSuccess, showStatusError, showStatusWarning, clearStatus, disableConsultarBtn, enableConsultarBtn, disableBaixarLoteBtn, enableBaixarLoteBtn, showBaixarLoteBtn, hideBaixarLoteBtn, getStatusMessageArea } from './domUtils.js';
 import { salvarConfiguracoes, carregarConfiguracoes } from './storageUtils.js';
 import { isValidDateTimeFormat, isValidUrlBase } from './validationUtils.js';
@@ -25,12 +26,14 @@ export function limparCampos() {
     const datainicioInput = getElement('datainicio');
     const datafimInput = getElement('datafim');
     const chamadasTableBody = getChamadasTableBody();
+    const convertCheckbox = getElement(CHECKBOX_CONVERT_TO_MP3_ID); // Obtém o checkbox
 
     if (urlBaseInput) urlBaseInput.value = '';
     if (loginInput) loginInput.value = '';
     if (tokenInput) tokenInput.value = '';
     if (datainicioInput) datainicioInput.value = '';
     if (datafimInput) datafimInput.value = '';
+    if (convertCheckbox) convertCheckbox.checked = false; // Desmarca o checkbox
 
     if (chamadasTableBody) chamadasTableBody.innerHTML = '';
     clearStatus();
@@ -187,7 +190,7 @@ async function fetchWidevoiceDataByDateRange(urlBase, login, token, currentSearc
     // A URL não tem offset/limit, apenas acao=statusreport e credenciais
     const url = `https://${urlBase}/api.php?acao=statusreport&login=${login}&token=${token}`;
     // O intervalo de data/hora é passado no payload POST
-    const payload = { datainicio: currentSearchStartApi, datafim: currentSearchEndApi };
+    const payload = { datainicio: currentSearchStartApi, datafim: currentSearchEndApi }; // Usa o parâmetro da função como o fim da faixa
 
     const response = await fetch(url, {
         method: 'POST',
@@ -260,7 +263,7 @@ export async function consultarChamadas() {
             if (page > MAX_PAGES_CONSULTATION) {
                 console.warn(`Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Interrompendo a busca.`);
                 // Exibe o aviso de limite máximo imediatamente
-                showStatusWarning(`⚠️ Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Resultados podem estar incompletos.`);
+                showStatusWarning(MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length) + ` ⚠️ Limite máximo de páginas (${MAX_PAGES_CONSULTATION}) atingido. Resultados podem estar incompletos.`);
                 // Quebra o loop
                 break;
             }
@@ -300,6 +303,8 @@ export async function consultarChamadas() {
                     // Verifica se já havia resultados antes de parar para não exibir sucesso com 0 total se o primeiro fetch já foi 0
                     if (allResults.length > 0) {
                         showStatusSuccess(`${MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length)}. Total de resultados finais: ${allResults.length}`);
+                    } else {
+                        showStatusWarning(MESSAGES.NO_RESULTS); // Nenhum resultado encontrado em nenhuma faixa
                     }
                 }
                 // Não precisamos concatenar data aqui, pois é vazio.
@@ -374,13 +379,6 @@ export async function consultarChamadas() {
         } // Fim do loop while (currentSearchStart <= originalSearchEnd)
 
 
-        // Trata o caso onde NENHUM resultado foi encontrado em NENHUMA página (allResults.length é 0)
-        // Verifica se o status já não foi definido (por erro, limite máximo, ou sucesso com 0 resultados)
-        if (allResults.length === 0 && getStatusMessageArea()?.className !== 'error' && getStatusMessageArea()?.className !== 'warning' && !getStatusMessageArea()?.innerHTML.includes('✅ Busca finalizada')) {
-            showStatusWarning(MESSAGES.NO_RESULTS); // Assume que a busca retornou 0 total
-        }
-
-
         // 6. Processa e exibe TODOS os resultados combinados (agora em allResults)
         // displayResults foi ajustada para não limpar o status ao ser chamada
         displayResults(allResults, formData.cleanUserUrl);
@@ -424,13 +422,18 @@ export async function baixarGravacoesEmLote() {
         return;
     }
 
+    // Obtém o estado do checkbox de conversão
+    const convertCheckbox = getElement(CHECKBOX_CONVERT_TO_MP3_ID);
+    const convertToMp3 = convertCheckbox ? convertCheckbox.checked : false;
+
     // Chama a função auxiliar que faz a comunicação com o backend e salva o arquivo
-    // fetchAndSaveZipFromBackend agora gerencia o estado dos botões e status internamente
-    fetchAndSaveZipFromBackend(urlsGravacoesEncontradas);
+    // Passa a lista de gravações E o estado da conversão para o backend
+    fetchAndSaveZipFromBackend(urlsGravacoesEncontradas, convertToMp3);
 }
 
 // Função auxiliar para baixar o arquivo ZIP do backend e salvar (agora separada)
-async function fetchAndSaveZipFromBackend(recordingsList) {
+// Agora aceita a flag convertToMp3
+async function fetchAndSaveZipFromBackend(recordingsList, convertToMp3) {
     const baixarLoteBtn = getBaixarLoteBtn();
 
     showStatusLoading(MESSAGES.DOWNLOAD_PROCESSING);
@@ -438,7 +441,8 @@ async function fetchAndSaveZipFromBackend(recordingsList) {
 
     try {
         // Utiliza a função de fetch para o backend importada
-        const response = await fetchBackendZip(recordingsList);
+        // Passa a lista e a flag convertToMp3 no corpo da requisição
+        const response = await fetchBackendZip(recordingsList, convertToMp3);
 
         // --- TRATAMENTO DA RESPOSTA DO BACKEND (COM DETALHES DE ERRO) ---
         if (!response.ok) {
@@ -448,11 +452,14 @@ async function fetchAndSaveZipFromBackend(recordingsList) {
                 const errorData = await response.json();
                 console.error('Dados de erro do backend:', errorData);
 
-                if (errorData && (errorData.error || errorData.details || errorData.failedDownloads)) {
+                if (errorData && (errorData.error || errorData.details || errorData.failedDownloads || errorData.failedConversions)) {
                     const errorMsg = errorData.error || errorData.details || `Status: ${response.status}`;
-                    const failedItems = errorData.failedDownloads;
+                    const failedDownloadsItems = errorData.failedDownloads; // Lista de falhas de download
+                    const failedConversionsItems = errorData.failedConversions; // Lista de falhas de conversão
 
-                    showStatusError(MESSAGES.DOWNLOAD_FAILED_DETAILS(errorMsg, failedItems));
+
+                    // Usa a mensagem detalhada que agora aceita ambas as listas de falha
+                    showStatusError(MESSAGES.DOWNLOAD_FAILED_DETAILS(errorMsg, failedDownloadsItems, failedConversionsItems));
                     return; // Sai da função após tratar o erro detalhado
 
                 } else {
@@ -487,13 +494,26 @@ async function fetchAndSaveZipFromBackend(recordingsList) {
 
     } catch (error) {
         console.error('Erro na comunicação com o backend ou processamento/exibição do erro no frontend:', error);
-        showStatusError(`❌ Erro: ${error.message}`); // Exibe o erro formatado
+        showStatusError(`❌ Erro: ${error.message}`); // Exibe o error formatado
 
     } finally {
         // Reabilita o botão ao final
         if (baixarLoteBtn) enableBaixarLoteBtn();
     }
 }
+
+// CORRIGIDO: Função fetchBackendZip precisa enviar a flag convertToMp3
+// backendApi.js
+// import { BACKEND_DOWNLOAD_URL } from './constants.js';
+// export async function fetchBackendZip(recordingsList, convertToMp3) { // Aceita a flag
+//     const backendUrl = BACKEND_DOWNLOAD_URL;
+//     const response = await fetch(backendUrl, {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ recordings: recordingsList, convertToMp3: convertToMp3 }), // Envia como objeto com flag
+//     });
+//     return response;
+// }
 
 
 // --- Event Listeners ---

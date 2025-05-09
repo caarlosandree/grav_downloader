@@ -1,7 +1,7 @@
 import { BACKEND_DOWNLOAD_URL } from './constants.js';
 
-// Função para enviar a lista de gravações para o backend e obter a resposta (Blob ou JSON de erro)
-export async function fetchBackendZip(recordingsList) {
+// Função para enviar a lista de gravações e a flag de conversão para o backend
+export async function fetchBackendZip(recordingsList, convertToMp3) { // Aceita a flag convertToMp3
     const backendUrl = BACKEND_DOWNLOAD_URL;
 
     const response = await fetch(backendUrl, {
@@ -9,7 +9,8 @@ export async function fetchBackendZip(recordingsList) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(recordingsList),
+        // Envia um objeto que inclui a lista de gravações E a flag de conversão
+        body: JSON.stringify({ recordings: recordingsList, convertToMp3: convertToMp3 }),
     });
 
     // Não tratamos response.ok aqui, apenas retornamos a resposta.

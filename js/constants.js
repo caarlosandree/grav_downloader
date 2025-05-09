@@ -4,6 +4,9 @@ export const API_LIMIT_PER_PAGE = 500; // Limitação da API Widevoice
 export const BACKEND_DOWNLOAD_URL = 'http://localhost:3000/download-batch'; // URL do seu Backend
 export const MAX_PAGES_CONSULTATION = 200; // Limite máximo de páginas para consulta (segurança)
 
+// ADICIONADO: ID do checkbox de conversão
+export const CHECKBOX_CONVERT_TO_MP3_ID = 'convertToMp3';
+
 
 // --- Constantes para Mensagens ---
 export const MESSAGES = {
@@ -19,25 +22,45 @@ export const MESSAGES = {
     CLIENT_ERROR: 'Erro na requisição: ', // Erros 4xx da API Widevoice
     SERVER_ERROR: 'Erro do servidor: ', // Erros 5xx da API Widevoice
     DOWNLOAD_CONFIRM: (count) => `Você está prestes a solicitar ao servidor o download e zip de ${count} gravação(ões). Deseja continuar?`,
-    DOWNLOAD_PROCESSING: 'Comunicando com o servidor para preparar o download em lote...',
+    // ATUALIZADO: Mensagem de processamento do download para incluir conversão
+    DOWNLOAD_PROCESSING: 'Comunicando com o servidor para preparar o download e conversão (se solicitado) em lote...',
     DOWNLOAD_STARTED: (filename) => `✅ Download do arquivo "${filename}" iniciado.`,
     DOWNLOAD_CANCELLED: 'Solicitação de download em lote cancelada pelo usuário.',
     NO_RECORDINGS_TO_DOWNLOAD: "Nenhuma gravação encontrada para baixar.",
     TEXT_BAIXAR_GRAVACAO: '🔊 Baixar',
-    // ADICIONADO: Constante para a mensagem de resultados finais
     FINAL_RESULTS_DISPLAY: (count) => `✅ Busca finalizada. Total de resultados: ${count}`,
-    DOWNLOAD_FAILED_DETAILS: (errorMsg, failedList) => {
+    // ATUALIZADO: Mensagem de erro detalhada para incluir falhas de conversão
+    DOWNLOAD_FAILED_DETAILS: (errorMsg, failedDownloadsList, failedConversionsList) => {
         let msg = `❌ Erro no download em lote: ${errorMsg}`;
-        if (failedList && Array.isArray(failedList) && failedList.length > 0) {
-            msg += `\n\nDetalhes das falhas (${failedList.length} total):`;
-            const displayLimit = 10;
-            failedList.slice(0, displayLimit).forEach(item => {
+
+        if (failedDownloadsList && Array.isArray(failedDownloadsList) && failedDownloadsList.length > 0) {
+            msg += `\n\n--- Downloads Falhos (${failedDownloadsList.length}) ---\n`;
+            const displayLimit = 5; // Limita a exibição direta para não poluir muito
+            failedDownloadsList.slice(0, displayLimit).forEach(item => {
                 msg += `\n- ${item.url} (${item.error || 'Erro desconhecido'})`;
             });
-            if (failedList.length > displayLimit) {
-                msg += `\n... e mais ${failedList.length - displayLimit} falha(s). Verifique o console do backend (se tiver acesso) para a lista completa, ou o arquivo 'failed_downloads.log' dentro do ZIP (se foi gerado parcialmente).`;
+            if (failedDownloadsList.length > displayLimit) {
+                msg += `\n... e mais ${failedDownloadsList.length - displayLimit} falha(s) de download.`;
             }
         }
+
+        if (failedConversionsList && Array.isArray(failedConversionsList) && failedConversionsList.length > 0) {
+            msg += `\n\n--- Conversões Falhas (${failedConversionsList.length}) ---\n`;
+            const displayLimit = 5;
+            failedConversionsList.slice(0, displayLimit).forEach(item => {
+                msg += `\n- ${item.url} (${item.error || 'Erro desconhecido'})`;
+            });
+            if (failedConversionsList.length > displayLimit) {
+                msg += `\n... e mais ${failedConversionsList.length - displayLimit} falha(s) de conversão.`;
+            }
+        }
+
+        // Mensagem final sobre o relatório no ZIP
+        if (failedDownloadsList?.length > 0 || failedConversionsList?.length > 0) {
+            msg += `\n\nVerifique o arquivo 'processamento_relatorio.log' dentro do ZIP (se foi gerado parcialmente) para mais detalhes, ou o console do backend (se tiver acesso).`;
+        }
+
+
         return msg;
     }
 };

@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Consulta de Chamadas WideVoice</title>
+    <!-- Google Fonts - Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Free (para ícones) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <link rel="stylesheet" href="style.css">
@@ -40,8 +42,17 @@
         <input type="datetime-local" id="datafim" required/>
     </div>
 
+    <!-- Novo grupo para o checkbox de conversão -->
+    <div class="input-group checkbox-group"> <!-- Adicionei uma classe para estilizar este grupo -->
+        <input type="checkbox" id="convertToMp3">
+        <label for="convertToMp3">Converter para MP3</label>
+    </div>
+
+
     <div class="button-group">
-        <button id="consultarBtn"><i class="fas fa-search"></i> Consultar</button> <button id="limparCamposBtn"><i class="fas fa-eraser"></i> Limpar Campos</button> </div>
+        <button id="consultarBtn"><i class="fas fa-search"></i> Consultar</button>
+        <button id="limparCamposBtn"><i class="fas fa-eraser"></i> Limpar Campos</button>
+    </div>
 </div>
 
 <button id="baixarLoteBtn" style="display: none; margin-top: 10px;"><i class="fas fa-download"></i> Baixar Gravações em Lote</button>
