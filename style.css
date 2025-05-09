@@ -11,131 +11,145 @@
     --background-color: #f8f9fa; /* Fundo mais claro */
     --card-background: #fff;
     --border-color: #dee2e6; /* Cor padrão para bordas */
-    --shadow-color: rgba(0, 0, 0, 0.1); /* Cor padrão para sombras */
-    --border-radius: 0.25rem; /* Raio de borda padrão (aprox 4px) */
+    --shadow-color: rgba(0, 0, 0, 0.15); /* Sombra sutilmente mais pronunciada */
+    --border-radius: 0.3rem; /* Raio de borda padrão (aprox 4.8px) */
 
-    /* Cores para mensagens de status */
-    --status-loading: #17a2b8; /* Azul para carregar */
-    --status-success: #28a745; /* Verde para sucesso */
-    --status-warning: #ffc107; /* Amarelo para aviso */
-    --status-error: #dc3545;   /* Vermelho para erro */
-    --status-text-light: #fff; /* Texto claro para status escuros */
-    --status-text-dark: #333; /* Texto escuro para status claros */
+    /* Cores para mensagens de status (Corrigido: Definindo cores de fundo, texto e borda para cada status) */
+    --status-loading-bg: #e0f7fa; /* Light Blue Background */
+    --status-loading-text: #007b8a; /* Darker Blue Text */
+    --status-loading-border: #b2ebf2; /* Border Blue */
+
+    --status-success-bg: #e8f5e9; /* Light Green Background */
+    --status-success-text: #1b5e20; /* Darker Green Text */
+    --status-success-border: #a5d6a7; /* Border Green */
+
+    --status-warning-bg: #fffde7; /* Light Yellow Background */
+    --status-warning-text: #fbc02d; /* Darker Yellow Text */
+    --status-warning-border: #ffea00; /* Border Yellow */
+
+    --status-error-bg: #ffebee; /* Light Red Background */
+    --status-error-text: #c62828; /* Darker Red Text */
+    --status-error-border: #ef9a9a; /* Border Red */
+
+    /* Removidas as variáveis --status-text-light e --status-text-dark pois não serão mais usadas diretamente */
 }
 
 
 body {
     font-family: 'Roboto', sans-serif;
-    padding: 20px; /* Ajuste o padding */
+    padding: 20px;
     background: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
-    margin: 0; /* Remove margem padrão do body */
+    margin: 0;
 }
 
 h1 {
     color: var(--primary-color);
     text-align: center;
-    margin-bottom: 30px; /* Aumenta a margem inferior */
-    font-size: 2.2em; /* Ajusta tamanho do título */
+    margin-bottom: 30px;
+    font-size: 2.2em;
     font-weight: 700;
 }
 
 .form-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 20px; /* Aumenta o espaço entre os grupos de input */
+    gap: 20px;
     max-width: 800px;
-    margin: 0 auto 30px auto; /* Centraliza e aumenta margem inferior */
-    padding: 25px; /* Aumenta o padding */
+    margin: 0 auto 30px auto;
+    padding: 25px;
     background-color: var(--card-background);
-    box-shadow: 0 4px 12px var(--shadow-color); /* Sombra mais suave */
+    box-shadow: 0 6px 15px var(--shadow-color);
     border-radius: var(--border-radius);
 }
 
 .input-group {
-    flex: 1 1 220px; /* Ajusta o flex-basis */
+    flex: 1 1 220px;
     display: flex;
     flex-direction: column;
 }
 
 label {
     display: block;
-    margin-bottom: 8px; /* Ajusta a margem inferior */
-    font-weight: 500; /* Peso médio para rótulos */
+    margin-bottom: 8px;
+    font-weight: 500;
     color: var(--text-color);
-    font-size: 0.95em; /* Levemente menor que o padrão */
+    font-size: 0.95em;
 }
 
 input[type="text"],
 input[type="datetime-local"] {
-    padding: 10px; /* Ajusta o padding */
+    padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 1em;
     width: 100%;
     box-sizing: border-box;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Adiciona transição para foco */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input[type="text"]:focus,
 input[type="datetime-local"]:focus {
     outline: none;
     border-color: var(--secondary-color);
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Adiciona um "glow" azul */
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 
 .button-group {
     flex-basis: 100%;
     display: flex;
-    gap: 15px; /* Ajusta o espaço entre botões */
+    gap: 15px;
     justify-content: center;
-    margin-top: 15px; /* Ajusta a margem superior */
+    margin-top: 15px;
 }
 
 
 button {
-    padding: 10px 20px; /* Ajusta o padding */
+    padding: 10px 20px;
     font-size: 1em;
     border: none;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease; /* Adiciona transições */
-    flex-grow: 0; /* Botões não crescem ilimitadamente */
-    max-width: 180px; /* Aumenta a largura máxima */
+    transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+    flex-grow: 0;
+    max-width: 180px;
     font-weight: 500;
-    text-transform: uppercase; /* Texto em maiúsculas */
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 button:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
-    opacity: 0.7; /* Ajusta opacidade para desabilitado */
+    opacity: 0.7;
     box-shadow: none;
     transform: none;
 }
 
 #consultarBtn {
     background-color: var(--primary-color);
-    color: var(--status-text-light);
+    color: white; /* Cor de texto branca, já que o fundo primário é escuro */
 }
 #consultarBtn:hover:not(:disabled) {
     background-color: var(--primary-color-dark);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Sombra no hover */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 #consultarBtn:active:not(:disabled) {
-    transform: scale(0.98); /* Efeito de pressionar */
+    transform: scale(0.98);
 }
 
 
-/* Estilo para o botão Limpar Campos (ajustado o ID para 'limparCamposBtn') */
 #limparCamposBtn {
-    background-color: #6c757d; /* Cor cinza Bootstrap */
-    color: var(--status-text-light);
+    background-color: #6c757d;
+    color: white; /* Cor de texto branca */
 }
 #limparCamposBtn:hover:not(:disabled) {
-    background-color: #5a6268; /* Tom mais escuro no hover */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Sombra no hover */
+    background-color: #5a6268;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 #limparCamposBtn:active:not(:disabled) {
     transform: scale(0.98);
@@ -143,36 +157,50 @@ button:disabled {
 
 
 #resultado {
-    margin-top: 30px; /* Aumenta a margem superior */
+    margin-top: 30px;
 }
 
-/* --- Estilos da Área de Status --- */
-.status-message { /* Classe adicionada à div no HTML */
+/* --- Estilos da Área de Status (Corrigido: Usando as novas variáveis de cor) --- */
+.status-message {
     margin-top: 15px;
-    padding: 12px; /* Ajusta o padding */
+    padding: 12px;
     border-radius: var(--border-radius);
     text-align: center;
     font-weight: 500;
-    min-height: 1.2em; /* Garante uma altura mínima */
+    min-height: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid transparent; /* Adiciona borda transparente para manter consistência visual */
 }
 
 /* Estilos baseados nas classes adicionadas pelo JS */
 .status-message.loading {
-    background-color: var(--status-loading);
-    color: var(--status-text-light);
+    background-color: var(--status-loading-bg);
+    color: var(--status-loading-text); /* Usando a variável de cor de texto correta */
+    border-color: var(--status-loading-border);
 }
 .status-message.success {
-    background-color: var(--status-success);
-    color: var(--status-text-light);
+    background-color: var(--status-success-bg);
+    color: var(--status-success-text); /* Usando a variável de cor de texto correta */
+    border-color: var(--status-success-border);
 }
 .status-message.warning {
-    background-color: var(--status-warning);
-    color: var(--status-text-dark); /* Texto escuro para fundo claro */
-    border: 1px solid #ffda6a; /* Borda para avisos */
+    background-color: var(--status-warning-bg);
+    color: var(--status-warning-text); /* Usando a variável de cor de texto correta */
+    border-color: var(--status-warning-border);
 }
 .status-message.error {
-    background-color: var(--status-error);
-    color: var(--status-text-light);
+    background-color: var(--status-error-bg);
+    color: var(--status-error-text); /* Usando a variável de cor de texto correta */
+    border-color: var(--status-error-border);
+}
+
+/* Estilo para os ícones dentro da área de status */
+.status-message i {
+    font-size: 1.2em; /* Tamanho maior para os ícones de status */
+    /* A cor do ícone é herdada do texto pai */
 }
 
 
@@ -180,47 +208,56 @@ button:disabled {
 #chamadasTable {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px; /* Ajusta margem superior */
-    box-shadow: 0 4px 8px var(--shadow-color); /* Sombra mais suave */
+    margin-top: 20px;
+    box-shadow: 0 4px 10px var(--shadow-color);
     background-color: var(--card-background);
     border-radius: var(--border-radius);
-    overflow: hidden; /* Garante que as bordas arredondadas funcionem com collapse */
+    overflow: hidden;
 }
 
 #chamadasTable thead {
-    background-color: #e9ecef; /* Fundo mais suave para o cabeçalho */
+    background-color: #e9ecef;
 }
 
 #chamadasTable th,
 #chamadasTable td {
-    padding: 12px; /* Ajusta padding */
+    padding: 12px;
     text-align: left;
-    border-bottom: 1px solid var(--border-color); /* Borda mais suave */
+    border-bottom: 1px solid var(--border-color);
 }
 
 #chamadasTable th {
-    font-weight: 700; /* Peso mais ousado para cabeçalhos */
+    font-weight: 700;
     color: var(--text-color);
 }
 
 #chamadasTable tbody tr:nth-child(even) {
-    background-color: #f2f2f2; /* Cor de fundo alternada mais suave */
+    background-color: #f2f2f2;
 }
 
 #chamadasTable tbody tr:hover {
-    background-color: #e2e6ea; /* Cor de hover mais suave */
+    background-color: #e2e6ea;
 }
 
 #chamadasTable td a {
-    color: var(--secondary-color); /* Usa a cor secundária para links */
+    color: var(--secondary-color);
     text-decoration: none;
-    font-weight: 500; /* Peso médio */
+    font-weight: 500;
     transition: color 0.2s ease, text-decoration 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 #chamadasTable td a:hover {
     color: var(--secondary-color-dark);
     text-decoration: underline;
 }
+
+/* Estilo para os ícones dentro dos links da tabela */
+#chamadasTable td a i {
+    font-size: 1em;
+}
+
 
 #chamadasTable td em {
     color: #666;
@@ -230,10 +267,10 @@ button:disabled {
 
 /* Estilo para o botão de baixar em lote */
 #baixarLoteBtn {
-    background-color: var(--secondary-color); /* Usa a cor secundária */
-    color: var(--status-text-light);
+    background-color: var(--secondary-color);
+    color: white; /* Cor de texto branca */
     display: block;
-    margin: 30px auto; /* Aumenta margem */
+    margin: 30px auto;
     max-width: 300px;
 }
 #baixarLoteBtn:hover:not(:disabled) {
@@ -246,7 +283,7 @@ button:disabled {
 
 
 /* Estilos de Responsividade */
-@media (max-width: 768px) { /* Ajusta para tablets e celulares */
+@media (max-width: 768px) {
     body {
         padding: 15px;
     }
@@ -263,42 +300,64 @@ button:disabled {
     }
 
     .input-group {
-        flex-basis: 100%; /* Inputs em linhas separadas */
+        flex-basis: 100%;
     }
 
     .button-group {
-        flex-direction: column; /* Botões empilhados */
+        flex-direction: column;
         gap: 10px;
         margin-top: 15px;
     }
 
     button {
-        max-width: 100%; /* Botões ocupam a largura total */
+        max-width: 100%;
         padding: 12px 20px;
     }
 
-    #chamadasTable th,
-    #chamadasTable td {
-        padding: 10px;
-        font-size: 0.9em;
+    #chamadasTable {
+        box-shadow: none;
+        border-radius: 0;
     }
 
-    /* Opcional: Ocultar alguns cabeçalhos da tabela em mobile e usar labels nos dados */
-    /* #chamadasTable thead { display: none; }
+    /* Implementação da visualização 'card' para as linhas da tabela em telas menores */
+    #chamadasTable thead {
+        display: none;
+    }
+    #chamadasTable tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--card-background);
+        box-shadow: 0 2px 5px var(--shadow-color);
+        padding: 10px;
+    }
     #chamadasTable td {
         display: block;
         text-align: right;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px dotted #ccc;
+        padding: 8px 0;
+        position: relative;
+    }
+    #chamadasTable td:last-child {
+        border-bottom: none;
     }
     #chamadasTable td::before {
-        content: attr(data-label); // Requer adicionar data-label no HTML ou JS
-        float: left;
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 45%;
         font-weight: bold;
         text-transform: uppercase;
-    } */
+        text-align: left;
+        color: var(--text-color);
+    }
+    #chamadasTable td a {
+        justify-content: flex-end;
+    }
 }
 
-@media (max-width: 480px) { /* Ajustes menores para celulares */
+@media (max-width: 480px) {
     body {
         padding: 10px;
     }
@@ -314,5 +373,10 @@ button:disabled {
 
     button {
         padding: 10px 15px;
+    }
+
+    #chamadasTable td::before {
+        left: 5px;
+        width: 40%;
     }
 }

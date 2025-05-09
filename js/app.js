@@ -1,9 +1,10 @@
 // Importa tudo que é necessário de outros módulos
 import { MESSAGES, API_LIMIT_PER_PAGE, MAX_PAGES_CONSULTATION } from './constants.js';
+// Importa funções de domUtils (não precisamos importar showStatus diretamente aqui, usamos as de atalho)
 import { getElement, getChamadasTableBody, getBaixarLoteBtn, getConsultarBtn, showStatusLoading, showStatusSuccess, showStatusError, showStatusWarning, clearStatus, disableConsultarBtn, enableConsultarBtn, disableBaixarLoteBtn, enableBaixarLoteBtn, showBaixarLoteBtn, hideBaixarLoteBtn, getStatusMessageArea } from './domUtils.js';
 import { salvarConfiguracoes, carregarConfiguracoes } from './storageUtils.js';
 import { isValidDateTimeFormat, isValidUrlBase } from './validationUtils.js';
-// Importa a função da API Widevoice ajustada para fatiamento temporal (definida neste mesmo arquivo agora)
+// Importa a função da API Widevoice (vamos manter a função de fatiamento temporal aqui, como estava)
 // Não precisamos importar fetchWidevoiceDataByDateRange aqui se ela for definida no mesmo arquivo
 // import { fetchWidevoiceDataByDateRange } from './widevoiceApi.js'; // Removida a importação se definida localmente
 
@@ -84,7 +85,7 @@ function getAndValidateFormData() {
 
     const cleanUserUrl = user_url.replace(/^https?:\/\//, '');
 
-    // CORRIGIDO: Retornando dateFimObj (nome correto)
+    // Retornando dateFimObj (nome correto)
     return { login, token, datainicioApi, datafimApi, cleanUserUrl, dateInicioObj, dateFimObj };
 }
 
@@ -117,14 +118,17 @@ export function displayResults(dados, userUrlBase) {
 
         const numeroCell = document.createElement('td');
         numeroCell.textContent = chamada.numero;
+        numeroCell.setAttribute('data-label', 'Número'); // Adiciona data-label
         row.appendChild(numeroCell);
 
         const datahoraCell = document.createElement('td');
         datahoraCell.textContent = chamada.datahora; // Usa a datahora original da API
+        datahoraCell.setAttribute('data-label', 'Data/Hora'); // Adiciona data-label
         row.appendChild(datahoraCell);
 
         const duracaoCell = document.createElement('td');
-        duracaoCell.textContent = `${chamada.duracao} segundos`;
+        duracaoCell.innerHTML = `${chamada.duracao} <em>segundos</em>`; // Mantido <em> para segundos
+        duracaoCell.setAttribute('data-label', 'Duração (s)'); // Adiciona data-label
         row.appendChild(duracaoCell);
 
         const gravacaoCell = document.createElement('td');
@@ -137,8 +141,11 @@ export function displayResults(dados, userUrlBase) {
         const linkGravacao = document.createElement('a');
         linkGravacao.href = urlGravacao;
         linkGravacao.target = '_blank';
-        linkGravacao.textContent = MESSAGES.TEXT_BAIXAR_GRAVACAO;
+        // Usa ícone no link de download
+        linkGravacao.innerHTML = `<i class="fas fa-download"></i> ${MESSAGES.TEXT_BAIXAR_GRAVACAO}`; // Adiciona ícone
         gravacaoCell.appendChild(linkGravacao);
+        gravacaoCell.setAttribute('data-label', 'Gravação'); // Adiciona data-label
+
 
         row.appendChild(gravacaoCell);
 
@@ -289,8 +296,11 @@ export async function consultarChamadas() {
                 console.log(`API retornou 0 resultados para faixa ${startApiFormatted} a ${endApiFormatted}. Parando a busca.`);
                 // Limpa o status de carregamento e exibe uma mensagem de sucesso final (se não já foi definido por limite max)
                 if (!getStatusMessageArea()?.innerHTML.includes('Limite máximo')) {
-                    clearStatus();
-                    showStatusSuccess(`${MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length)}. Total de resultados finais: ${allResults.length}`);
+                    clearStatus(); // Limpa o status de carregamento
+                    // Verifica se já havia resultados antes de parar para não exibir sucesso com 0 total se o primeiro fetch já foi 0
+                    if (allResults.length > 0) {
+                        showStatusSuccess(`${MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length)}. Total de resultados finais: ${allResults.length}`);
+                    }
                 }
                 // Não precisamos concatenar data aqui, pois é vazio.
                 break; // Sai do loop principal de paginação
@@ -306,7 +316,7 @@ export async function consultarChamadas() {
                 console.log(`API retornou ${data.length} resultados (< ${API_LIMIT_PER_PAGE}) para faixa ${startApiFormatted} a ${endApiFormatted}. Assumindo fim da busca.`);
                 // Limpa o status de carregamento e exibe uma mensagem de sucesso final (se não já foi definido por limite max)
                 if (!getStatusMessageArea()?.innerHTML.includes('Limite máximo')) {
-                    clearStatus();
+                    clearStatus(); // Limpa o status de carregamento
                     showStatusSuccess(`${MESSAGES.FINAL_RESULTS_DISPLAY(allResults.length)}. Total de resultados finais: ${allResults.length}`);
                 }
                 break; // Sai do loop principal de paginação
@@ -363,14 +373,6 @@ export async function consultarChamadas() {
 
         } // Fim do loop while (currentSearchStart <= originalSearchEnd)
 
-
-        // Se o loop terminou porque currentSearchStart > originalSearchEnd E não houve break anterior,
-        // significa que a busca percorreu todo o intervalo, mas talvez a última página não foi < limit.
-        // No entanto, a condição `data.length < API_LIMIT_PER_PAGE` *deveria* ter sido atendida na última faixa com dados.
-        // Se o loop chegou aqui sem um break, é um cenário improvável ou o intervalo foi exatamente preenchido.
-        // A mensagem de status final (sucesso, limite máximo, erro de data) já foi definida DENTRO dos ifs de break ou catch.
-        // Se o loop terminou por `currentSearchStart > originalSearchEnd` sem um break explícito antes,
-        // o status de sucesso já teria sido definido no penúltimo passo se a última página não fosse exatamente 500.
 
         // Trata o caso onde NENHUM resultado foi encontrado em NENHUMA página (allResults.length é 0)
         // Verifica se o status já não foi definido (por erro, limite máximo, ou sucesso com 0 resultados)
