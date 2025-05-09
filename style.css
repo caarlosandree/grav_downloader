@@ -1,134 +1,224 @@
-body {
-    font-family: Arial, sans-serif;
-    padding: 2em;
-    background: #f0f4f8;
-    line-height: 1.6; /* Melhora a legibilidade do texto */
-}
-h1 {
-    color: #25cc00;
-    text-align: center; /* Centraliza o título */
-    margin-bottom: 1.5em;
+/* Importação da fonte Roboto */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+/* Definição de variáveis CSS para a paleta de cores e outros valores */
+:root {
+    --primary-color: #28a745; /* Um verde um pouco mais vibrante */
+    --primary-color-dark: #218838; /* Tom mais escuro para hover */
+    --secondary-color: #007bff; /* Um azul padrão para destacar */
+    --secondary-color-dark: #0056b3; /* Tom mais escuro para hover */
+    --text-color: #333;
+    --background-color: #f8f9fa; /* Fundo mais claro */
+    --card-background: #fff;
+    --border-color: #dee2e6; /* Cor padrão para bordas */
+    --shadow-color: rgba(0, 0, 0, 0.1); /* Cor padrão para sombras */
+    --border-radius: 0.25rem; /* Raio de borda padrão (aprox 4px) */
+
+    /* Cores para mensagens de status */
+    --status-loading: #17a2b8; /* Azul para carregar */
+    --status-success: #28a745; /* Verde para sucesso */
+    --status-warning: #ffc107; /* Amarelo para aviso */
+    --status-error: #dc3545;   /* Vermelho para erro */
+    --status-text-light: #fff; /* Texto claro para status escuros */
+    --status-text-dark: #333; /* Texto escuro para status claros */
 }
 
-/* Novo estilo para o contêiner do formulário usando Flexbox */
+
+body {
+    font-family: 'Roboto', sans-serif;
+    padding: 20px; /* Ajuste o padding */
+    background: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0; /* Remove margem padrão do body */
+}
+
+h1 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 30px; /* Aumenta a margem inferior */
+    font-size: 2.2em; /* Ajusta tamanho do título */
+    font-weight: 700;
+}
+
 .form-container {
     display: flex;
-    flex-wrap: wrap; /* Permite que os itens quebrem para a próxima linha em telas menores */
-    gap: 1em; /* Espaço entre os grupos de input */
-    max-width: 800px; /* Limita a largura máxima do formulário */
-    margin: 0 auto 2em auto; /* Centraliza o contêiner e adiciona margem inferior */
-    padding: 1.5em;
-    background-color: #fff;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    border-radius: 8px;
+    flex-wrap: wrap;
+    gap: 20px; /* Aumenta o espaço entre os grupos de input */
+    max-width: 800px;
+    margin: 0 auto 30px auto; /* Centraliza e aumenta margem inferior */
+    padding: 25px; /* Aumenta o padding */
+    background-color: var(--card-background);
+    box-shadow: 0 4px 12px var(--shadow-color); /* Sombra mais suave */
+    border-radius: var(--border-radius);
 }
 
 .input-group {
-    flex: 1 1 200px; /* Flex-grow, flex-shrink, flex-basis - permite que os inputs cresçam e tenham uma base de 200px */
+    flex: 1 1 220px; /* Ajusta o flex-basis */
     display: flex;
-    flex-direction: column; /* Empilha label e input */
+    flex-direction: column;
 }
 
 label {
     display: block;
-    margin-bottom: 0.5em;
-    font-weight: bold;
-    color: #333;
+    margin-bottom: 8px; /* Ajusta a margem inferior */
+    font-weight: 500; /* Peso médio para rótulos */
+    color: var(--text-color);
+    font-size: 0.95em; /* Levemente menor que o padrão */
 }
 
 input[type="text"],
 input[type="datetime-local"] {
-    padding: 0.8em; /* Aumenta o padding para melhor toque */
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    padding: 10px; /* Ajusta o padding */
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
     font-size: 1em;
-    width: 100%; /* Ocupa a largura total do input-group */
-    box-sizing: border-box; /* Inclui padding e border na largura */
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Adiciona transição para foco */
 }
 
+input[type="text"]:focus,
+input[type="datetime-local"]:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Adiciona um "glow" azul */
+}
+
+
 .button-group {
-    flex-basis: 100%; /* Ocupa a largura total para os botões ficarem em sua própria linha */
+    flex-basis: 100%;
     display: flex;
-    gap: 1em; /* Espaço entre os botões */
-    justify-content: center; /* Centraliza os botões */
-    margin-top: 1em;
+    gap: 15px; /* Ajusta o espaço entre botões */
+    justify-content: center;
+    margin-top: 15px; /* Ajusta a margem superior */
 }
 
 
 button {
-    padding: 0.8em 1.5em; /* Aumenta o padding dos botões */
+    padding: 10px 20px; /* Ajusta o padding */
     font-size: 1em;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     cursor: pointer;
-    transition: background-color 0.3s ease, opacity 0.3s ease; /* Adiciona transição para opacidade */
-    flex-grow: 1; /* Botões crescem para preencher o button-group */
-    max-width: 150px; /* Limita a largura máxima de cada botão */
+    transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease; /* Adiciona transições */
+    flex-grow: 0; /* Botões não crescem ilimitadamente */
+    max-width: 180px; /* Aumenta a largura máxima */
+    font-weight: 500;
+    text-transform: uppercase; /* Texto em maiúsculas */
 }
 button:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
-    opacity: 0.6; /* Diminui a opacidade quando desabilitado */
+    opacity: 0.7; /* Ajusta opacidade para desabilitado */
+    box-shadow: none;
+    transform: none;
 }
 
 #consultarBtn {
-    background-color: #25cc00;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--status-text-light);
 }
 #consultarBtn:hover:not(:disabled) {
-    background-color: #25cc00;
+    background-color: var(--primary-color-dark);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Sombra no hover */
+}
+#consultarBtn:active:not(:disabled) {
+    transform: scale(0.98); /* Efeito de pressionar */
 }
 
-/* Novo estilo para o botão Limpar */
-#limparBtn {
-    background-color: #6c757d; /* Cor cinza */
-    color: white;
+
+/* Estilo para o botão Limpar Campos (ajustado o ID para 'limparCamposBtn') */
+#limparCamposBtn {
+    background-color: #6c757d; /* Cor cinza Bootstrap */
+    color: var(--status-text-light);
 }
-#limparBtn:hover:not(:disabled) {
-    background-color: #5a6268;
+#limparCamposBtn:hover:not(:disabled) {
+    background-color: #5a6268; /* Tom mais escuro no hover */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Sombra no hover */
+}
+#limparCamposBtn:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 
 #resultado {
-    margin-top: 2em;
+    margin-top: 30px; /* Aumenta a margem superior */
 }
 
-/* --- Estilos da Tabela (mantidos ou ligeiramente ajustados) --- */
+/* --- Estilos da Área de Status --- */
+.status-message { /* Classe adicionada à div no HTML */
+    margin-top: 15px;
+    padding: 12px; /* Ajusta o padding */
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-weight: 500;
+    min-height: 1.2em; /* Garante uma altura mínima */
+}
+
+/* Estilos baseados nas classes adicionadas pelo JS */
+.status-message.loading {
+    background-color: var(--status-loading);
+    color: var(--status-text-light);
+}
+.status-message.success {
+    background-color: var(--status-success);
+    color: var(--status-text-light);
+}
+.status-message.warning {
+    background-color: var(--status-warning);
+    color: var(--status-text-dark); /* Texto escuro para fundo claro */
+    border: 1px solid #ffda6a; /* Borda para avisos */
+}
+.status-message.error {
+    background-color: var(--status-error);
+    color: var(--status-text-light);
+}
+
+
+/* --- Estilos da Tabela --- */
 #chamadasTable {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 1em;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    background-color: #fff;
+    margin-top: 20px; /* Ajusta margem superior */
+    box-shadow: 0 4px 8px var(--shadow-color); /* Sombra mais suave */
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    overflow: hidden; /* Garante que as bordas arredondadas funcionem com collapse */
+}
+
+#chamadasTable thead {
+    background-color: #e9ecef; /* Fundo mais suave para o cabeçalho */
 }
 
 #chamadasTable th,
 #chamadasTable td {
-    padding: 10px;
+    padding: 12px; /* Ajusta padding */
     text-align: left;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--border-color); /* Borda mais suave */
 }
 
 #chamadasTable th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-    color: #333;
+    font-weight: 700; /* Peso mais ousado para cabeçalhos */
+    color: var(--text-color);
 }
 
 #chamadasTable tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #f2f2f2; /* Cor de fundo alternada mais suave */
 }
 
 #chamadasTable tbody tr:hover {
-    background-color: #e9e9e9;
+    background-color: #e2e6ea; /* Cor de hover mais suave */
 }
 
 #chamadasTable td a {
-    color: #0066cc;
+    color: var(--secondary-color); /* Usa a cor secundária para links */
     text-decoration: none;
-    font-weight: bold;
+    font-weight: 500; /* Peso médio */
+    transition: color 0.2s ease, text-decoration 0.2s ease;
 }
 #chamadasTable td a:hover {
+    color: var(--secondary-color-dark);
     text-decoration: underline;
 }
 
@@ -138,40 +228,91 @@ button:disabled {
     font-size: 0.9em;
 }
 
-/* Estilo para as mensagens de erro ou resultado vazio */
-#resultado > p, #resultado > div {
-    margin-top: 1em;
-    padding: 0.8em;
-    border-radius: 4px;
-    text-align: center; /* Centraliza as mensagens */
-}
-#resultado > p {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffeeba;
-}
-
-#resultado > div[id="resultado"] { /* Estilo específico para a div principal de resultado se usada para mensagens */
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-
 /* Estilo para o botão de baixar em lote */
 #baixarLoteBtn {
-    background-color: #facf0e; /* Cor verde */
-    color: white;
-    display: block; /* Ocupa a linha inteira */
-    margin: 20px auto; /* Centraliza e adiciona margem */
-    max-width: 300px; /* Largura máxima */
+    background-color: var(--secondary-color); /* Usa a cor secundária */
+    color: var(--status-text-light);
+    display: block;
+    margin: 30px auto; /* Aumenta margem */
+    max-width: 300px;
 }
 #baixarLoteBtn:hover:not(:disabled) {
-    background-color: #218838;
+    background-color: var(--secondary-color-dark);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+#baixarLoteBtn:active:not(:disabled) {
+    transform: scale(0.98);
 }
 
 
-a {
-    color: #0066cc;
-    text-decoration: none;
+/* Estilos de Responsividade */
+@media (max-width: 768px) { /* Ajusta para tablets e celulares */
+    body {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+    }
+
+    .form-container {
+        padding: 20px;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .input-group {
+        flex-basis: 100%; /* Inputs em linhas separadas */
+    }
+
+    .button-group {
+        flex-direction: column; /* Botões empilhados */
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    button {
+        max-width: 100%; /* Botões ocupam a largura total */
+        padding: 12px 20px;
+    }
+
+    #chamadasTable th,
+    #chamadasTable td {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+
+    /* Opcional: Ocultar alguns cabeçalhos da tabela em mobile e usar labels nos dados */
+    /* #chamadasTable thead { display: none; }
+    #chamadasTable td {
+        display: block;
+        text-align: right;
+        border-bottom: 1px solid var(--border-color);
+    }
+    #chamadasTable td::before {
+        content: attr(data-label); // Requer adicionar data-label no HTML ou JS
+        float: left;
+        font-weight: bold;
+        text-transform: uppercase;
+    } */
+}
+
+@media (max-width: 480px) { /* Ajustes menores para celulares */
+    body {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .form-container {
+        padding: 15px;
+        gap: 10px;
+    }
+
+    button {
+        padding: 10px 15px;
+    }
 }
