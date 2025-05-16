@@ -5,10 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="edfceefb-4567-4447-b291-eda47d434304" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/js/apiService.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/js/downloadService.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/js/filterService.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/js/paginationService.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/js/state.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/js/uiManager.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/routes/downloadBatch.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/routes/downloadBatch.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/css/_table.css" beforeDir="false" afterPath="$PROJECT_DIR$/css/_table.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/css/_layout.css" beforeDir="false" afterPath="$PROJECT_DIR$/css/_layout.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/js/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/js/constants.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/constants.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/js/widevoiceApi.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/widevoiceApi.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,8 +28,8 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="HTML File" />
-        <option value="JavaScript File" />
         <option value="CSS File" />
+        <option value="JavaScript File" />
       </list>
     </option>
   </component>
@@ -120,7 +129,7 @@
       <workItem from="1747307881759" duration="159000" />
       <workItem from="1747313422447" duration="8000" />
       <workItem from="1747313681628" duration="286000" />
-      <workItem from="1747420210940" duration="3842000" />
+      <workItem from="1747420210940" duration="8310000" />
     </task>
     <servers />
   </component>

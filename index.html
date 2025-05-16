@@ -7,7 +7,8 @@
     <meta name="description" content="Ferramenta para consultar e baixar gravações de chamadas de sistemas WideVoice.">
 
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==
+" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <link rel="stylesheet" href="css/style.css">
 
@@ -59,6 +60,33 @@
         </div>
     </div>
 
+    <div id="filter-container" class="form-container" style="display: none;">
+        <h2>Filtros</h2>
+        <div class="input-row">
+            <div class="input-group">
+                <label for="filterRamal">Ramal:</label>
+                <input type="text" id="filterRamal" placeholder="Filtrar por Ramal"/>
+            </div>
+            <div class="input-group">
+                <label for="filterNomeOperador">Nome Operador:</label>
+                <input type="text" id="filterNomeOperador" placeholder="Filtrar por Nome Operador"/>
+            </div>
+        </div>
+        <div class="input-row">
+            <div class="input-group">
+                <label for="filterOrigem">Origem:</label>
+                <input type="text" id="filterOrigem" placeholder="Filtrar por Origem"/>
+            </div>
+            <div class="input-group">
+                <label for="filterDestino">Destino:</label>
+                <input type="text" id="filterDestino" placeholder="Filtrar por Destino"/>
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="applyFiltersBtn"><i class="fas fa-filter"></i> Aplicar Filtros</button>
+            <button id="clearFiltersBtn"><i class="fas fa-times"></i> Limpar Filtros</button>
+        </div>
+    </div>
     <button id="baixarLoteBtn" style="display: none; margin-top: 10px;"><i class="fas fa-download"></i> Baixar Gravações em Lote</button>
 
     <div id="resultado">

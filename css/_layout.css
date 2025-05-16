@@ -12,6 +12,16 @@
     gap: 20px; /* Espaçamento vertical entre os elementos */
 }
 
+.form-container h2 {
+    color: var(--primary-color); /* Usa a cor primária */
+    margin-top: 0; /* Remove margem superior */
+    margin-bottom: 20px; /* Espaço abaixo do título */
+    font-size: 1.6em; /* Tamanho de fonte ligeiramente menor que h1 */
+    font-family: 'intelbras medium', sans-serif;
+    text-align: center; /* Centraliza o título */
+    width: 100%; /* Ocupa a largura total para centralizar corretamente */
+}
+
 /* --- Estilo para as Linhas de Inputs --- */
 .input-row {
     display: flex;
