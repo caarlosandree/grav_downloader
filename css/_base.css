@@ -1,0 +1,70 @@
+/* Importação da fonte Roboto (mantido aqui ou pode ser no main style.css) */
+/* Mantive aqui por ser um estilo "base" de fontes */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+/* Fontes Intelbras */
+/* Certifique-se de que os arquivos .ttf estão na pasta '../fontes/' em relação a este arquivo */
+@font-face{
+    font-family: 'intelbras light';
+    src: url(../fontes/IntelbrasSans-Light.ttf) format('truetype');
+    font-weight: 300; /* Peso da fonte ajustado para 'light' */
+    font-style: normal;
+    font-display: swap; /* Melhora o carregamento da fonte */
+}
+
+@font-face{
+    font-family: 'intelbras medium';
+    src: url(../fontes/IntelbrasSans-Medium.ttf) format('truetype');
+    font-weight: 500; /* Peso da fonte ajustado para 'medium' */
+    font-style: normal;
+    font-display: swap; /* Melhora o carregamento da fonte */
+}
+
+@font-face {
+    font-family: 'intelbras regular';
+    src: url(../fontes/IntelbrasSans-Regular.ttf) format('truetype');
+    font-weight: 400; /* Peso da fonte ajustado para 'regular' */
+    font-style: normal;
+    font-display: swap; /* Melhora o carregamento da fonte */
+}
+
+body {
+    font-family: 'intelbras regular', sans-serif; /* Fonte padrão */
+    padding: 20px;
+    background: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh; /* Garante que o body ocupe pelo menos a altura da viewport */
+}
+
+h1 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.2em;
+    font-family: 'intelbras medium', sans-serif;
+    font-weight: 700; /* Mantido 700 para ser mais destacado */
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 0.95em;
+    font-family: 'intelbras light', sans-serif; /* Mantido light para labels */
+}
+
+/* Estilo para a tag main adicionada */
+main {
+    width: 100%;
+    max-width: 900px; /* Limita a largura do conteúdo principal */
+    margin: 0 auto; /* Centraliza o conteúdo principal */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}

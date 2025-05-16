@@ -1,0 +1,52 @@
+/* --- Estilos da Área de Status --- */
+.status-message {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-weight: 500;
+    min-height: 1.2em; /* Garante uma altura mínima */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid transparent;
+    word-break: break-word;
+}
+
+/* Estilos baseados nas classes adicionadas pelo JS */
+.status-message.loading {
+    background-color: var(--status-loading-bg);
+    color: var(--status-loading-text);
+    border-color: var(--status-loading-border);
+}
+.status-message.success {
+    background-color: var(--status-success-bg);
+    color: var(--status-success-text);
+    border-color: var(--status-success-border);
+}
+.status-message.warning {
+    background-color: var(--status-warning-bg);
+    color: var(--status-warning-text);
+    border-color: var(--status-warning-border);
+}
+.status-message.error {
+    background-color: var(--status-error-bg);
+    color: var(--status-error-text);
+    border-color: var(--status-error-border);
+}
+
+/* Estilo para os ícones dentro da área de status */
+.status-message i {
+    font-size: 1.2em;
+}
+
+/* Ajuste para o ícone giratório de loading */
+.status-message.loading .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

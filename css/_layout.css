@@ -1,0 +1,60 @@
+/* --- Estilo para o Contêiner do Formulário (o "Card") --- */
+.form-container {
+    background-color: var(--card-background);
+    padding: 30px; /* Espaçamento interno */
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 10px var(--shadow-color);
+    width: 100%;
+    margin-bottom: 20px; /* Espaço abaixo do card */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espaçamento vertical entre os elementos */
+}
+
+/* --- Estilo para as Linhas de Inputs --- */
+.input-row {
+    display: flex;
+    gap: 20px; /* Espaçamento horizontal entre os input-groups */
+    flex-wrap: wrap; /* Permite que os input-groups quebrem */
+}
+
+/* --- Estilo para Cada Grupo de Input (Label + Input) --- */
+.input-group {
+    flex: 1; /* Permite crescer e ocupar espaço */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Estilo do grupo de botões */
+.button-group {
+    flex-basis: 100%;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+/* Estilo para o botão de baixar em lote */
+#baixarLoteBtn {
+    display: block;
+    margin: 30px auto; /* Centraliza e adiciona margem */
+    max-width: 300px;
+}
+
+/* Estilo para o contêiner de resultados */
+#resultado {
+    margin-top: 30px;
+    width: 100%;
+}
+
+/* --- Estilos para os Controles de Paginação --- */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    gap: 15px;
+    flex-wrap: wrap;
+}

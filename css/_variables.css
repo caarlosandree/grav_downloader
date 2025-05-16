@@ -1,0 +1,29 @@
+/* Definição de variáveis CSS para a paleta de cores e outros valores */
+:root {
+    --primary-color: #28a745; /* Verde primário */
+    --primary-color-dark: #218838; /* Verde primário mais escuro */
+    --secondary-color: #21730e; /* Verde secundário */
+    --secondary-color-dark: #1b5e0c; /* Verde secundário mais escuro */
+    --text-color: #333; /* Cor do texto geral */
+    --background-color: #f8f9fa; /* Fundo claro da página */
+    --card-background: #fff; /* Fundo branco para cards/containers */
+    --border-color: #dee2e6; /* Cor da borda */
+    --shadow-color: rgba(0, 0, 0, 0.15); /* Cor da sombra */
+    --border-radius: 0.3rem; /* Raio da borda */
+
+    --status-loading-bg: #e0f7fa; /* Fundo para status loading */
+    --status-loading-text: #007b8a; /* Texto para status loading */
+    --status-loading-border: #b2ebf2; /* Borda para status loading */
+
+    --status-success-bg: #e8f5e9; /* Fundo para status success */
+    --status-success-text: #1b5e20; /* Texto para status success */
+    --status-success-border: #a5d6a7; /* Borda para status success */
+
+    --status-warning-bg: #fffde7; /* Fundo para status warning */
+    --status-warning-text: #fbc02d; /* Texto para status warning */
+    --status-warning-border: #ffea00; /* Borda para status warning */
+
+    --status-error-bg: #ffebee; /* Fundo para status error */
+    --status-error-text: #c62828; /* Texto para status error */
+    --status-error-border: #ef9a9a; /* Borda para status error */
+}

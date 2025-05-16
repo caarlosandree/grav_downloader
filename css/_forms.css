@@ -1,0 +1,203 @@
+input[type="text"],
+input[type="datetime-local"],
+input[type="password"] {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: 'intelbras regular', sans-serif;
+}
+
+input[type="text"]:focus,
+input[type="datetime-local"]:focus,
+input[type="password"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25); /* Adiciona um glow suave ao focar */
+    outline: none; /* Remove o outline padrão do navegador */
+}
+
+button {
+    font-family: 'intelbras medium', sans-serif; /* Botões com fonte medium */
+    padding: 10px 20px;
+    font-size: 1em;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+    flex-grow: 0;
+    max-width: 180px; /* Limita a largura máxima */
+    font-weight: 500;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
+    transform: none;
+}
+
+#consultarBtn {
+    background-color: var(--primary-color);
+    color: white;
+}
+#consultarBtn:hover:not(:disabled) {
+    background-color: var(--primary-color-dark);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+#consultarBtn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+#limparCamposBtn {
+    background-color: #6c757d; /* Cor de cinza Bootstrap */
+    color: white;
+}
+#limparCamposBtn:hover:not(:disabled) {
+    background-color: #5a6268;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+#limparCamposBtn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+#baixarLoteBtn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+#baixarLoteBtn:hover:not(:disabled) {
+    background-color: var(--secondary-color-dark);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+#baixarLoteBtn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+/* --- Estilos para Checkbox Customizado --- */
+.checkbox-group {
+    display: flex; /* Usa flexbox para alinhar o checkbox e label */
+    align-items: center; /* Alinha verticalmente */
+}
+
+.checkbox-group input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 0;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-color);
+    font-weight: normal;
+}
+
+.checkbox-group label::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--card-background);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.checkbox-group label::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 7px;
+    transform: translateY(-50%) rotate(45deg);
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.checkbox-group input[type="checkbox"]:checked + label::before {
+    border-color: var(--primary-color);
+    background-color: var(--primary-color);
+}
+
+.checkbox-group input[type="checkbox"]:checked + label::after {
+    opacity: 1;
+}
+
+.checkbox-group input[type="checkbox"]:focus + label::before {
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+}
+
+.checkbox-group input[type="checkbox"]:disabled + label {
+    color: #a0a0a0;
+    cursor: not-allowed;
+}
+
+.checkbox-group input[type="checkbox"]:disabled + label::before {
+    border-color: #d3d3d3;
+    background-color: #e9e9eb;
+}
+
+.checkbox-group input[type="checkbox"]:disabled:checked + label::before {
+    background-color: #a0d3b4;
+    border-color: #a0d3b4;
+}
+
+.checkbox-group input[type="checkbox"]:disabled:checked + label::after {
+    border-color: #e9e9eb;
+}
+/* Fim do Estilo para Checkbox Customizado */
+
+/* Estilo para os botões de paginação */
+.pagination-controls button {
+    padding: 8px 15px;
+    font-size: 0.9em;
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, opacity 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: var(--primary-color-dark);
+    border-color: var(--primary-color-dark);
+}
+
+.pagination-controls button:disabled {
+    background-color: #cccccc;
+    border-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+#pageInfo {
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--text-color);
+    min-width: 100px;
+    text-align: center;
+}

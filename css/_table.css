@@ -1,0 +1,88 @@
+/* css/_table.css */
+
+/* --- Estilos da Tabela --- */
+#chamadasTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 4px 10px var(--shadow-color);
+    background-color: var(--card-background);
+    border-radius: var(--border-radius);
+    overflow: hidden; /* Esconde o overflow para cantos arredondados */
+}
+
+#chamadasTable caption {
+    /* Estilo para a caption (opcional, para torná-la visualmente oculta mas acessível) */
+    /* Para ser visível para leitores de tela, mas não visualmente na tela */
+    position: absolute;
+    caption-side: top;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    /* Ou, se quiser que seja visível, estilize-a normalmente: */
+    /*
+    margin-bottom: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: left;
+    color: var(--text-color);
+    */
+}
+
+#chamadasTable thead {
+    background-color: #e9ecef; /* Cor de fundo do cabeçalho */
+}
+
+#chamadasTable th,
+#chamadasTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#chamadasTable th {
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+#chamadasTable tbody tr:nth-child(even) {
+    background-color: #f2f2f2; /* Cor para linhas pares */
+}
+
+#chamadasTable tbody tr:hover {
+    background-color: #e2e6ea; /* Cor ao passar o mouse */
+}
+
+#chamadasTable td a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+#chamadasTable td a:hover {
+    color: var(--secondary-color-dark);
+    text-decoration: underline;
+}
+
+/* Estilo para links desabilitados (sem gravação) */
+#chamadasTable td a.disabled-link {
+    color: #a0a0a0 !important; /* Cor cinza */
+    pointer-events: none; /* Não permite clique */
+    text-decoration: none !important; /* Remove sublinhado */
+    cursor: default; /* Cursor padrão */
+}
+
+/* Estilo para os ícones dentro dos links da tabela */
+#chamadasTable td a i {
+    font-size: 1em;
+}
+
+#chamadasTable td em {
+    color: #666;
+    font-style: normal;
+    font-size: 0.9em;
+}
