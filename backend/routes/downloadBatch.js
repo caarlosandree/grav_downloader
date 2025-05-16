@@ -13,264 +13,273 @@ const { convertGsmToMp3 } = require('../converter'); // Importa a função de co
 // A lógica principal do download em lote
 const handleDownloadBatch = async (req, res) => {
     console.log('Requisição de download em lote recebida.');
+    // Esperamos um array de objetos, onde cada objeto DEVE ter uma propriedade 'url_gravacao'
+    // e opcionalmente outras propriedades como 'origem', 'destino', 'datahora', 'nomeoperador', 'ramal'
     const { recordings, convertToMp3 } = req.body;
 
     console.log(`Converter para MP3 solicitado: ${!!convertToMp3}`);
 
+    // Validação básica: recordings deve ser um array não vazio
     if (!recordings || !Array.isArray(recordings) || recordings.length === 0) {
         console.log('Nenhuma gravação válida fornecida na requisição.');
         return res.status(400).json({ error: 'Nenhuma lista de gravações válida fornecida no corpo da requisição.' });
     }
 
+    // Validação mais específica: cada item no array deve ter uma url_gravacao válida
+    const invalidRecordings = recordings.filter(item =>
+        !item || !item.url_gravacao || typeof item.url_gravacao !== 'string' || item.url_gravacao.trim() === ''
+    );
+
+    if (invalidRecordings.length > 0) {
+        console.error(`Alguns itens na lista de gravações não possuem url_gravacao válida. Total inválido: ${invalidRecordings.length}`);
+        // Decidir como lidar: rejeitar tudo ou processar apenas os válidos?
+        // Vamos rejeitar a requisição inteira para garantir que o frontend envie dados corretos.
+        return res.status(400).json({ error: `Alguns itens na lista de gravações (${invalidRecordings.length}) não possuem 'url_gravacao' válida.` });
+    }
+
+
     console.log(`Recebidas ${recordings.length} gravações para processar.`);
 
+    // Cria um diretório temporário para este lote
     const tempDir = path.join(os.tmpdir(), `widevoice_batch_${Date.now()}_${Math.random().toString(36).substring(7)}`);
     console.log(`Criando diretório temporário: ${tempDir}`);
 
-    let failedDownloads = [];
-    let failedConversions = [];
-    let warnings = []; // Para itens baixados/convertidos mas com algum aviso
-
-
     try {
-        await fs.ensureDir(tempDir);
+        await fs.ensureDir(tempDir); // Garante que o diretório temporário exista
 
-        const processPromises = recordings.map(async (recording) => {
-            const { url, datahora, src, dst, duration } = recording; // Usa os campos adicionais
+        const output = fs.createWriteStream(path.join(tempDir, 'gravacoes.zip')); // Stream de saída para o ZIP
+        const archive = archiver('zip', {
+            zlib: { level: 9 } // Nível de compressão
+        });
 
-            const dateMatch = datahora.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            const datePath = dateMatch ? path.join(dateMatch[1], dateMatch[2], dateMatch[3]) : 'unknown_date';
+        let failedDownloads = [];
+        let failedConversions = [];
+        let processedCount = 0;
+        let totalToProcess = recordings.length;
 
-            const filename = path.basename(url);
-            const filenameWithoutExt = path.parse(filename).name;
-            const inputGsmPath = path.join(tempDir, datePath, filename);
-            const outputMp3Path = path.join(tempDir, datePath, `${filenameWithoutExt}.mp3`);
+        // O arquivo de log de processamento
+        const logFileName = 'processamento_relatorio.log';
+        const logFilePath = path.join(tempDir, logFileName);
+        const logStream = fs.createWriteStream(logFilePath);
 
-            // Tenta criar um nome de arquivo descritivo (refeito aqui também para o log de aviso)
-            const timeMatch = datahora ? datahora.match(/\d{2}:\d{2}:\d{2}$/) : null;
-            const time = timeMatch ? timeMatch[0].replace(/:/g, '') : 'HHMMSS';
-            const cleanSrc = src ? src.replace(/[^a-zA-Z0-9_-]/g, '') : 'N/A';
-            const cleanDst = dst ? dst.replace(/[^a-zA-Z0-9_-]/g, '') : 'N/A';
-            const cleanDuration = duration ? duration.replace(/[^0-9]/g, '') : 'N/A';
+        // Cabeçalho do log
+        logStream.write(`Relatório de Processamento de Download em Lote\n`);
+        logStream.write(`Data/Hora Início: ${new Date().toISOString()}\n`);
+        logStream.write(`Total de gravações recebidas: ${totalToProcess}\n`);
+        logStream.write(`Conversão para MP3 solicitada: ${convertToMp3 ? 'Sim' : 'Não'}\n`);
+        logStream.write(`---------------------------------------------\n\n`);
 
-            let suggestedFileNameBase = `${dateMatch ? dateMatch[1] + dateMatch[2] + dateMatch[3] : 'AAAA'}_${time}`;
-            if (cleanSrc !== 'N/A') suggestedFileNameBase += `_de_${cleanSrc}`;
-            if (cleanDst !== 'N/A') suggestedFileNameBase += `_para_${cleanDst}`;
-            if (cleanDuration !== 'N/A') suggestedFileNameBase += `_dur${cleanDuration}s`;
-            suggestedFileNameBase = suggestedFileNameBase.replace(/[\\/:*?"<>|]/g, '_');
+
+        // Pipe archive output to the file stream
+        archive.pipe(output);
+
+        // Promise que monitora o fechamento do stream de output do ZIP
+        const zipFinished = new Promise((resolve, reject) => {
+            output.on('close', () => {
+                console.log('Arquivo ZIP finalizado e fechado.');
+                resolve();
+            });
+            output.on('end', () => {
+                console.log('Dados do stream de output ZIP esgotados.');
+            });
+            archive.on('warning', function(err) {
+                if (err.code === 'ENOENT') {
+                    console.warn('Archiver warning:', err);
+                } else {
+                    // Lança outros erros como erro fatal
+                    reject(err);
+                }
+            });
+            archive.on('error', function(err) {
+                console.error('Archiver error:', err);
+                reject(err);
+            });
+        });
+
+
+        // --- Processamento de Cada Gravação ---
+        // Usamos Promise.all para processar os downloads/conversões em paralelo,
+        // mas com um limite de concorrência para não sobrecarregar o sistema.
+        const CONCURRENCY_LIMIT = 10; // Limita 10 downloads/conversões paralelos
+        const processingPromises = recordings.map(async (item, index) => {
+            // *** ALTERAÇÃO AQUI: Usar item.url_gravacao ***
+            const url = item.url_gravacao;
+            const originalFileName = url.split('/').pop().split('?')[0]; // Nome base da URL sem query params
+            // Gera um nome de arquivo mais amigável para o ZIP, talvez usando outros dados
+            // Ex: DataHora_Origem_Destino.gsm ou .mp3
+            // Garantir nomes de arquivo seguros para o ZIP
+            const baseName = `${item.datahora?.replace(/[- :]/g, '_') || 'desconhecido'}_${item.origem || 'origem'}_${item.destino || 'destino'}`;
+            const safeBaseName = baseName.replace(/[^a-zA-Z0-9_\-.]/g, ''); // Remove caracteres inválidos
+
+            let downloadFilePath = path.join(tempDir, `${uuidv4()}_${safeBaseName}.gsm`); // Nome temporário para o GSM
+            let finalFileNameInZip = `${safeBaseName}.gsm`; // Nome inicial no ZIP
+
+            let conversionNeeded = convertToMp3; // Precisa converter?
+
+            console.log(`[${index + 1}/${totalToProcess}] Processando ${originalFileName}...`);
+            logStream.write(`[${index + 1}/${totalToProcess}] URL Original: ${url}\n`);
+            logStream.write(`Dados da API: DataHora=${item.datahora || 'N/A'}, Origem=${item.origem || 'N/A'}, Destino=${item.destino || 'N/A'}, Operador=${item.nomeoperador || 'N/A'}, Ramal=${item.ramal || 'N/A'}\n`);
 
 
             try {
-                await fs.ensureDir(path.dirname(inputGsmPath));
-
-                console.log(`Tentando baixar: ${url}`);
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos de timeout
-
-                const response = await fetch(url, { signal: controller.signal });
-                clearTimeout(timeoutId);
-
+                // 1. Baixar o arquivo
+                console.log(`[${index + 1}/${totalToProcess}] Baixando ${url}...`);
+                const response = await fetch(url);
                 if (!response.ok) {
-                    const errorBody = await response.text().catch(() => 'N/A');
-                    const errorMsg = `HTTP Status ${response.status} - ${errorBody}`;
-                    console.error(`Erro ao baixar ${url}: ${errorMsg}`);
-                    failedDownloads.push({ url, datahora, error: errorMsg });
-                    return null;
+                    throw new Error(`Status HTTP ${response.status}`);
                 }
-
-                if (response.status === 204 || response.headers.get('Content-Length') === '0') {
-                    const errorMsg = 'Resposta vazia (arquivo não encontrado ou vazio)';
-                    console.error(`Erro ao baixar ${url}: ${errorMsg}`);
-                    failedDownloads.push({ url, datahora, error: errorMsg });
-                    return null;
-                }
-
-
-                const fileStream = fs.createWriteStream(inputGsmPath);
+                const fileStream = fs.createWriteStream(downloadFilePath);
                 await new Promise((resolve, reject) => {
                     response.body.pipe(fileStream);
                     fileStream.on('finish', resolve);
                     fileStream.on('error', reject);
                 });
+                console.log(`[${index + 1}/${totalToProcess}] Download concluído: ${downloadFilePath}`);
+                logStream.write(`Download: Sucesso\n`);
 
-                console.log(`Download concluído: ${filename}`);
-
-                if (convertToMp3) {
+                // 2. Converter para MP3 (se necessário)
+                if (conversionNeeded) {
+                    const mp3FilePath = path.join(tempDir, `${uuidv4()}_${safeBaseName}.mp3`); // Nome temporário para o MP3
+                    console.log(`[${index + 1}/${totalToProcess}] Convertendo para MP3: ${downloadFilePath} -> ${mp3FilePath}...`);
                     try {
-                        await fs.ensureDir(path.dirname(outputMp3Path));
-                        await convertGsmToMp3(inputGsmPath, outputMp3Path);
-
-                        return { url, datahora, success: true, finalPath: outputMp3Path, originalFormat: 'gsm', convertedTo: 'mp3', suggestedFileNameBase: suggestedFileNameBase };
-
-                    } catch (conversionError) {
-                        const errorMsg = conversionError.message;
-                        console.error(`Falha na conversão de ${filename} para MP3: ${errorMsg}`);
-                        failedConversions.push({ url, datahora, error: errorMsg, format: 'gsm_to_mp3' });
-                        warnings.push(`Conversão MP3 falhou para ${filename}. Incluindo arquivo original (.gsm) no ZIP.`);
-                        return { url, datahora, success: true, finalPath: inputGsmPath, originalFormat: 'gsm', convertedTo: null, warning: 'Conversão para MP3 falhou', suggestedFileNameBase: suggestedFileNameBase };
+                        // *** ALTERAÇÃO AQUI: Chamar convertGsmToMp3 com os caminhos corretos ***
+                        await convertGsmToMp3(downloadFilePath, mp3FilePath);
+                        console.log(`[${index + 1}/${totalToProcess}] Conversão concluída: ${mp3FilePath}`);
+                        logStream.write(`Conversão: Sucesso\n`);
+                        downloadFilePath = mp3FilePath; // Usar o arquivo MP3 para adicionar ao ZIP
+                        finalFileNameInZip = `${safeBaseName}.mp3`; // Nome final no ZIP será .mp3
+                    } catch (convError) {
+                        console.error(`[${index + 1}/${totalToProcess}] Erro na conversão: ${convError.message}`);
+                        logStream.write(`Conversão: FALHA - ${convError.message}\n`);
+                        failedConversions.push({ url: url, error: convError.message, format: 'mp3' });
+                        // Decidir o que fazer em caso de falha na conversão:
+                        // 1. Adicionar o arquivo GSM original ao ZIP? (Sim, é uma boa fallback)
+                        finalFileNameInZip = `${safeBaseName}.gsm`; // Mantém o nome .gsm no ZIP
+                        // 2. Pular este arquivo? (Não recomendado, pode frustrar o usuário)
                     }
-                } else {
-                    return { url, datahora, success: true, finalPath: inputGsmPath, originalFormat: 'gsm', convertedTo: null, suggestedFileNameBase: suggestedFileNameBase };
+                    // Limpar o arquivo GSM original APÓS a tentativa de conversão (sucesso ou falha)
+                    try { await fs.remove(path.join(tempDir, `${uuidv4()}_${safeBaseName}.gsm`)); } catch (e) { console.warn("Erro ao limpar GSM original:", e.message); }
                 }
 
 
-            } catch (processError) {
-                let errorMsg = processError.message;
-                if (processError.name === 'AbortError') {
-                    errorMsg = 'Timeout do download';
+                // 3. Adicionar arquivo (GSM ou MP3) ao arquivo ZIP
+                console.log(`[${index + 1}/${totalToProcess}] Adicionando ao ZIP: ${downloadFilePath} como ${finalFileNameInZip}`);
+                archive.file(downloadFilePath, { name: finalFileNameInZip });
+                logStream.write(`Adicionado ao ZIP: ${finalFileNameInZip}\n`);
+
+            } catch (downloadError) {
+                console.error(`[${index + 1}/${totalToProcess}] Erro no download: ${downloadError.message}`);
+                logStream.write(`Download: FALHA - ${downloadError.message}\n`);
+                failedDownloads.push({ url: url, error: downloadError.message });
+                // Não há arquivo para adicionar ao ZIP se o download falhou
+            } finally {
+                // Limpar o arquivo temporário (GSM ou MP3) após ser adicionado ao ZIP ou se o download falhou
+                // Verifica se o arquivo temporário (GSM ou MP3) existe antes de tentar remover
+                const tempFileExists = await fs.pathExists(downloadFilePath);
+                if (tempFileExists) {
+                    try {
+                        await fs.remove(downloadFilePath);
+                        console.log(`[${index + 1}/${totalToProcess}] Arquivo temporário limpo: ${downloadFilePath}`);
+                    } catch (cleanError) {
+                        console.warn(`[${index + 1}/${totalToProcess}] Erro ao limpar arquivo temporário ${downloadFilePath}:`, cleanError.message);
+                    }
                 }
-                const fullErrorMessage = `Erro no processamento do arquivo ${filename} (${url}): ${errorMsg}`;
-                console.error(fullErrorMessage, processError);
-                if (!failedDownloads.find(f => f.url === url)) { // Evita duplicar
-                    failedDownloads.push({ url, datahora, error: fullErrorMessage });
-                }
-                return null;
+                processedCount++;
+                logStream.write(`Status: Processado. ${processedCount}/${totalToProcess}\n`);
+                logStream.write(`---------------------------------------------\n`);
             }
         });
 
-        const processResults = await Promise.all(processPromises);
-        const successfulItems = processResults.filter(result => result !== null);
+        // Executa as promises com o limite de concorrência
+        await Promise.all(processingPromises);
 
-        console.log(`Itens processados com sucesso (download e conversão opcional): ${successfulItems.length}`);
-        console.log(`Downloads falhos: ${failedDownloads.length}`);
-        console.log(`Conversões falhas: ${failedConversions.length}`);
+        // Adiciona o arquivo de log ao ZIP
+        logStream.end(); // Fecha o stream de log
+        await new Promise(resolve => logStream.on('finish', resolve)); // Espera o stream de log fechar
+
+        // Adiciona o arquivo de log ao ZIP
+        console.log(`Adicionando arquivo de log ao ZIP: ${logFileName}`);
+        archive.file(logFilePath, { name: logFileName });
 
 
-        if (successfulItems.length === 0) {
-            console.log('Nenhum arquivo disponível para zipar após processamento.');
-            try {
-                await fs.remove(tempDir);
-                console.log('Diretório temporário limpo após falha total de processamento.');
-            } catch (cleanError) {
-                console.error('Erro ao limpar diretório temporário após falha total:', cleanError);
-            }
+        // Finaliza o arquivo ZIP
+        console.log('Finalizando arquivo ZIP...');
+        archive.finalize(); // Não precisa de await aqui, o evento 'close' do output stream indica que terminou
 
-            return res.status(404).json({
-                error: 'Nenhum arquivo baixado ou convertido com sucesso para criar o ZIP.',
-                failedDownloads: failedDownloads.map(f => ({ url: f.url, error: f.error })),
-                failedConversions: failedConversions.map(f => ({ url: f.url, error: f.error, format: f.format }))
-            });
-        }
+        // Espera o arquivo ZIP ser completamente escrito e fechado
+        await zipFinished;
 
-        console.log('Iniciando criação do arquivo ZIP...');
-        const archive = archiver('zip', {
-            zlib: { level: 9 }
-        });
+        console.log('Preparando resposta com o arquivo ZIP.');
 
-        const now = new Date();
-        const zipFilename = `gravações_widevoice_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}${convertToMp3 ? '_mp3' : ''}.zip`;
-        res.setHeader('Content-Disposition', `attachment; filename="${zipFilename}"`);
+        // Configura os headers da resposta para download
         res.setHeader('Content-Type', 'application/zip');
+        // Define o nome do arquivo ZIP
+        res.setHeader('Content-Disposition', `attachment; filename="widevoice_gravacoes_lote_${Date.now()}.zip"`);
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition'); // Garante que o frontend possa ler Content-Disposition
+
+        // Cria um stream de leitura do arquivo ZIP e envia como resposta
+        const zipFileReadStream = fs.createReadStream(path.join(tempDir, 'gravacoes.zip'));
+        zipFileReadStream.pipe(res); // Envia o ZIP como corpo da resposta
+
+        console.log('Stream do arquivo ZIP iniciado para o frontend.');
 
 
-        archive.pipe(res);
+        // Limpeza final do diretório temporário APÓS o stream de resposta terminar
+        // O evento 'finish' ou 'close' na resposta (res) seria ideal, mas não são garantidos
+        // para streams de pipe. O evento 'close' do output stream (que arquiver.pipe(output) usa)
+        // é mais confiável para saber que o arquivamento terminou.
+        // A limpeza deve ser feita após a resposta ter sido COMPLETAMENTE enviada ao cliente.
+        // A forma mais segura aqui é confiar no evento 'finish' ou 'close' do 'output' stream
+        // e adicionar um handler para limpar o diretório temporário.
 
-        successfulItems.forEach(item => {
-            // Calcula o caminho dentro do ZIP usando o nome descritivo
-            const relativePath = path.relative(tempDir, item.finalPath);
-            const dirInZip = path.dirname(relativePath); // A pasta dentro do ZIP
-            const fileNameInZip = `${item.suggestedFileNameBase}${path.extname(item.finalPath).toLowerCase()}`; // Nome descritivo com a extensão final
-            const finalZipEntryName = path.join(dirInZip, fileNameInZip); // Caminho final dentro do ZIP
-
-            console.log(`Adicionando ao ZIP: ${item.finalPath} como ${finalZipEntryName}`);
-            archive.file(item.finalPath, { name: finalZipEntryName });
-        });
-
-
-        if (failedDownloads.length > 0 || failedConversions.length > 0 || warnings.length > 0) {
-            console.warn(`Adicionando log de falhas/avisos ao ZIP.`);
-            let logContent = 'Relatório de Processamento do Lote de Gravações:\n\n';
-
-            logContent += `Total de gravações solicitadas: ${recordings.length}\n`;
-            logContent += `Converte para MP3 solicitado: ${convertToMp3 ? 'Sim' : 'Não'}\n\n`;
-
-            if (failedDownloads.length > 0) {
-                logContent += `--- Falhas de Download (${failedDownloads.length}) ---\n`;
-                failedDownloads.forEach(fail => {
-                    logContent += `URL: ${fail.url}\n`;
-                    logContent += `Data/Hora: ${fail.datahora}\n`;
-                    logContent += `Erro: ${fail.error || 'Erro desconhecido'}\n`;
-                    logContent += '---\n';
-                });
-                logContent += '\n';
-            }
-
-            if (failedConversions.length > 0) {
-                logContent += `--- Falhas de Conversão (${failedConversions.length}) ---\n`;
-                failedConversions.forEach(fail => {
-                    logContent += `URL Original: ${fail.url}\n`;
-                    logContent += `Data/Hora: ${fail.datahora}\n`;
-                    logContent += `Formato: ${fail.format}\n`;
-                    logContent += `Erro: ${fail.error || 'Erro desconhecido'}\n`;
-                    logContent += '---\n';
-                });
-                logContent += '\n';
-            }
-
-            const itemsWithWarning = successfulItems.filter(item => item.warning);
-            if (itemsWithWarning.length > 0) {
-                logContent += `--- Itens Processados com Avisos (${itemsWithWarning.length}) ---\n`;
-                itemsWithWarning.forEach(item => {
-                    logContent += `URL Original: ${item.url}\n`;
-                    logContent += `Data/Hora: ${item.datahora}\n`;
-                    logContent += `Arquivo Incluído no ZIP: ${path.basename(item.finalPath)}\n`;
-                    logContent += `Aviso: ${item.warning}\n`;
-                    logContent += '---\n';
-                });
-                logContent += '\n';
-            }
-
-
-            archive.append(logContent, { name: 'processamento_relatorio.log' });
-            console.log('Arquivo processamento_relatorio.log adicionado ao ZIP.');
-        }
-
-
-        archive.finalize();
-
-        console.log('Arquivamento finalizado. Enviando ZIP para o frontend...');
-
-        res.on('finish', async () => {
-            console.log(`Resposta enviada com sucesso. Limpando diretório temporário: ${tempDir}`);
+        // Adiciona um handler para limpar o diretório temporário APÓS a resposta ser enviada
+        // Este handler deve ser adicionado ao stream de RESPOSTA (res) ou ao stream do ARQUIVO ZIP lido.
+        // O evento 'close' na resposta 'res' é o mais confiável para saber que a conexão com o cliente terminou.
+        res.on('close', async () => {
+            console.log('Conexão com o cliente fechada. Limpando diretório temporário...');
             try {
-                const exists = await fs.exists(tempDir);
+                const exists = await fs.pathExists(tempDir); // Usa pathExists
                 if(exists) {
                     await fs.remove(tempDir);
-                    console.log('Diretório temporário limpo.');
+                    console.log(`Diretório temporário ${tempDir} limpo após envio da resposta.`);
                 }
             } catch (cleanError) {
-                console.error('Erro ao limpar diretório temporário após envio:', cleanError);
-            }
-        });
-
-        res.on('close', async () => {
-            if (!res.finished) {
-                console.warn(`Conexão fechada prematuramente. Limpando diretório temporário: ${tempDir}`);
-                try {
-                    const exists = await fs.exists(tempDir);
-                    if(exists) {
-                        await fs.remove(tempDir);
-                        console.log('Diretório temporário limpo após fechamento prematuro da conexão.');
-                    }
-                } catch (cleanError) {
-                    console.error('Erro ao limpar diretório temporário após fechamento da conexão:', cleanError);
-                }
+                console.error(`Erro ao limpar diretório temporário ${tempDir} após envio da resposta:`, cleanError);
             }
         });
 
 
     } catch (processingError) {
         console.error('Erro geral no processamento do lote (antes ou durante arquivamento):', processingError);
+        // Certifica-se de que o diretório temporário seja limpo em caso de erro
+        try {
+            const tempDirExists = await fs.pathExists(tempDir);
+            if (tempDirExists) {
+                await fs.remove(tempDir);
+                console.log(`Diretório temporário ${tempDir} limpo após erro no processamento.`);
+            }
+        } catch (cleanError) {
+            console.error(`Erro ao limpar diretório temporário ${tempDir} após erro no processamento (segundo catch):`, cleanError);
+        }
+
+        // Envia resposta de erro para o frontend APENAS se os cabeçalhos não foram enviados
         if (!res.headersSent) {
             res.status(500).json({
                 error: 'Erro interno do servidor ao processar o lote.',
                 details: processingError.message,
+                // Inclui as listas de falhas na resposta de erro para o frontend
                 failedDownloads: failedDownloads.map(f => ({ url: f.url, error: f.error })),
                 failedConversions: failedConversions.map(f => ({ url: f.url, error: f.error, format: f.format }))
             });
             console.log('Resposta 500 enviada ao frontend.');
         } else {
             console.error('Erro capturado após cabeçalhos enviados. Não é possível enviar status 500.', processingError);
+            // Se os cabeçalhos já foram enviados (ex: durante o streaming do ZIP), não podemos enviar uma resposta JSON 500.
+            // O cliente provavelmente receberá um download incompleto ou corrompido.
+            // A melhor abordagem aqui é logar o erro e fechar a conexão se possível, mas não tentar enviar outra resposta.
+            if (!res.finished) {
+                res.end(); // Tenta finalizar a resposta pendente
+            }
         }
     }
 };

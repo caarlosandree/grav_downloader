@@ -13,21 +13,12 @@
 
 #chamadasTable caption {
     /* Estilo para a caption (opcional, para torná-la visualmente oculta mas acessível) */
-    /* Para ser visível para leitores de tela, mas não visualmente na tela */
     position: absolute;
     caption-side: top;
     left: -9999px;
     width: 1px;
     height: 1px;
     overflow: hidden;
-    /* Ou, se quiser que seja visível, estilize-a normalmente: */
-    /*
-    margin-bottom: 10px;
-    font-size: 1.2em;
-    font-weight: bold;
-    text-align: left;
-    color: var(--text-color);
-    */
 }
 
 #chamadasTable thead {
@@ -85,4 +76,107 @@
     color: #666;
     font-style: normal;
     font-size: 0.9em;
+}
+
+/* --- AJUSTES NA VISUALIZAÇÃO MOBILE (CARD VIEW) --- */
+/* Media Query para Mobile (reproduzindo do _media-queries.css para o contexto da tabela) */
+@media (max-width: 480px) {
+    #chamadasTable thead {
+        display: none;
+    }
+    #chamadasTable tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--card-background);
+        box-shadow: 0 2px 5px var(--shadow-color);
+        padding: 10px;
+    }
+    #chamadasTable td {
+        display: block;
+        text-align: right;
+        border-bottom: 1px dotted #ccc;
+        padding: 8px 8px 8px 50%; /* Ajustado padding-left */
+        position: relative;
+        word-break: break-word;
+    }
+    #chamadasTable td:last-child {
+        border-bottom: none;
+    }
+    #chamadasTable td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 10px;
+        width: 45%; /* Ajustado largura */
+        font-weight: bold;
+        text-transform: uppercase;
+        text-align: left;
+        color: var(--text-color);
+    }
+    #chamadasTable td a {
+        justify-content: flex-end; /* Alinha o link da gravação à direita no modo card */
+    }
+}
+
+/* Media Query para tablets e desktops menores (mantém a tabela padrão) */
+@media (min-width: 481px) and (max-width: 768px) {
+    #chamadasTable thead {
+        display: table-header-group;
+    }
+    #chamadasTable tr {
+        display: table-row;
+        margin-bottom: 0;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+    #chamadasTable td {
+        display: table-cell;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px;
+        position: static;
+        word-break: normal;
+    }
+    #chamadasTable td:last-child {
+        border-bottom: 1px solid var(--border-color);
+    }
+    #chamadasTable td::before {
+        content: none;
+    }
+    #chamadasTable td a {
+        justify-content: flex-start;
+    }
+}
+
+/* Media Query para telas maiores que mobile e tablet (mantém a tabela padrão) */
+@media (min-width: 769px) {
+    #chamadasTable thead {
+        display: table-header-group;
+    }
+    #chamadasTable tr {
+        display: table-row;
+        margin-bottom: 0;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+    }
+    #chamadasTable td {
+        display: table-cell;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+        padding: 12px;
+        position: static;
+        word-break: normal;
+    }
+    #chamadasTable td:last-child {
+        border-bottom: 1px solid var(--border-color);
+    }
+    #chamadasTable td::before {
+        content: none;
+    }
+    #chamadasTable td a {
+        justify-content: flex-start;
+    }
 }
