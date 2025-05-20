@@ -51,11 +51,11 @@ Esta aplicação consiste em duas partes: um **frontend** (HTML, CSS, JS) e um *
 1.  Crie a pasta `js` dentro da pasta principal do projeto.
 2.  Crie os arquivos `js/constants.js`, `js/domUtils.js`, `js/storageUtils.js`, `js/validationUtils.js`, `js/backendApi.js`, `js/fileUtils.js` e `js/app.js` dentro da pasta `js`. Cole o código fornecido para cada um deles.
 3.  Certifique-se de que os arquivos `index.html` e `style.css` também estejam na pasta principal do projeto.
-4.  Edite o seu `index.html` e **adicione a biblioteca FileSaver.js** no `<head>` ou antes do seu script `app.js`. A tag `<script type="module">` para `app.js` deve estar presente.
-    ```html
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js](https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js)"></script>
-    <script type="module" src="js/app.js"></script>
-    ```
+4. Edite o seu `index.html` e **adicione a biblioteca FileSaver.js** no `<head>` ou antes do seu script `app.js`. A tag `<script type="module">` para `app.js` deve estar presente.
+   ```html
+   <script src="[https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js](https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js)"></script>
+   <script type="module" src="../js/app.js"></script>
+   ```
 5.  Abra o arquivo `index.html` em um navegador web moderno. É **altamente recomendado** usar um servidor web local simples (como o `http-server`, executando `npx http-server` na pasta do frontend e acessando via `http://localhost:...`) em vez de abrir o arquivo diretamente (`file://...`). Isso evita problemas de segurança relacionados a CORS e módulos JavaScript.
 6.  Preencha os campos na interface: **URL do servidor WideVoice**, **Login**, **Token**, **Data Início** e **Data Fim**.
 7.  Clique no botão **"Consultar"**.

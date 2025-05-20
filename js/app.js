@@ -197,12 +197,11 @@ export async function consultarChamadas() {
 
 
                 return {
-                    datahora: chamada.datahora,
+                    datahora: (chamada.datahora || '').replace(/\s+/g, ' ').trim(), // <-- CORRIGIDO AQUI
                     src: origem,
                     dst: destino,
                     duration: chamada.duracao,
-                    // CORRIGIDO: Usar 'url_gravacao' em vez de 'url' para compatibilidade com o backend
-                    url_gravacao: urlGravacao, // <-- Agora o backend vai encontrar esta propriedade
+                    url_gravacao: urlGravacao,
                     nomeoperador: chamada.nomeoperador,
                     ramal: chamada.ramal
                 };
